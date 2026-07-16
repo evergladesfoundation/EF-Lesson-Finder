@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lesson Plan Demo</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Bitter:wght@700&family=Public+Sans:wght@400;500&display=swap");
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #faf9f2;
+        font-family: "Public Sans", -apple-system, sans-serif;
+        color: #16352a;
+        padding: 24px;
+      }
+
+      .sheet {
+        max-width: 560px;
+        width: 100%;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 12px 32px rgba(22, 53, 42, 0.14);
+        overflow: hidden;
+      }
+
+      .sheet-header {
+        background: #16352a;
+        color: #faf9f2;
+        padding: 28px 32px;
+      }
+
+      .sheet-header span {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #a9c07f;
+        margin-bottom: 8px;
+      }
+
+      .sheet-header h1 {
+        font-family: "Bitter", serif;
+        font-weight: 700;
+        font-size: 26px;
+        margin: 0;
+      }
+
+      .sheet-body {
+        padding: 32px;
+      }
+
+      .sheet-body p {
+        line-height: 1.6;
+        font-size: 15px;
+      }
+
+      .placeholder-block {
+        margin-top: 20px;
+        border: 1px dashed rgba(22, 53, 42, 0.25);
+        border-radius: 10px;
+        padding: 20px;
+        color: #5c6f5e;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <div class="sheet-header">
+        <span>Lesson Plan Demo</span>
+        <h1 id="lesson-title">Everglades Literacy Lesson</h1>
+      </div>
+      <div class="sheet-body">
+        <p>
+          This is a placeholder page standing in for a real lesson plan
+          document. Once the Teacher Toolkit data pipeline is connected, this
+          link will open the actual lesson PDF or page.
+        </p>
+        <div class="placeholder-block">
+          Lesson Plan Demo — no real content here yet.
+        </div>
+      </div>
+    </div>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const title = params.get("title");
+      if (title) {
+        document.getElementById("lesson-title").textContent = title;
+        document.title = title + " — Lesson Plan Demo";
+      }
+    </script>
+  </body>
+</html>

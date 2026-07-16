@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Everglades Literacy Program (demo host page)</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, "Segoe UI", sans-serif;
+        color: #1a1a1a;
+      }
+      .demo-nav {
+        background: #1c95a6;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding: 0 24px;
+        height: 88px;
+      }
+      .demo-logo {
+        background: #a4c639;
+        color: #fff;
+        font-weight: 700;
+        padding: 10px 16px;
+        border-radius: 4px;
+        font-size: 14px;
+        line-height: 1.2;
+      }
+      .demo-nav-links {
+        display: flex;
+        gap: 20px;
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      main {
+        max-width: 720px;
+        margin: 48px auto;
+        padding: 0 24px 200px;
+        line-height: 1.6;
+      }
+      h1 {
+        font-size: 28px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-nav">
+      <div class="demo-logo">THE EVERGLADES<br />FOUNDATION</div>
+      <div class="demo-nav-links">
+        <span>About</span>
+        <span>Our Impact</span>
+        <span>Teacher Toolkit</span>
+        <span>Champion Schools</span>
+      </div>
+    </div>
+    <main>
+      <h1>Teacher Toolkit</h1>
+      <p>
+        This page stands in for a real page on evergladesliteracy.org, so the
+        Lesson Finder widget can be tested in a realistic surrounding layout.
+        The widget mounts itself via a single script tag near the end of
+        <code>body</code> — exactly how it will be embedded through Squarespace
+        Code Injection in production.
+      </p>
+      <p>
+        Try opening the widget in the bottom-right corner, click a quick-start
+        prompt, then try typing a free-text question like
+        <em>"lessons about mangroves"</em> or <em>"SC.5.L.17.1"</em>.
+      </p>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
