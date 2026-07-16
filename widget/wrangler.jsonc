@@ -1,0 +1,10 @@
+{
+  "name": "lessonfinder",
+  "compatibility_date": "2026-07-16",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "dist"
+  }
+}
