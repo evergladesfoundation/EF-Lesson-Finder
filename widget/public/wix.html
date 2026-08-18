@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Lesson Finder to Wix — Everglades Literacy</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Bitter:wght@700&family=Public+Sans:wght@400;500;600&display=swap");
+
+      :root {
+        --cypress: #16352a;
+        --sawgrass: #7c9a4c;
+        --teal: #2e7d74;
+        --egret: #faf9f2;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Public Sans", -apple-system, sans-serif;
+        color: var(--cypress);
+        background: var(--egret);
+        line-height: 1.55;
+      }
+
+      header {
+        background: var(--cypress);
+        color: var(--egret);
+        padding: 36px 24px 28px;
+      }
+
+      header h1 {
+        font-family: "Bitter", serif;
+        font-size: 28px;
+        margin: 0 0 8px;
+      }
+
+      header p {
+        margin: 0;
+        color: rgba(250, 249, 242, 0.78);
+        max-width: 640px;
+      }
+
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 32px 24px 160px;
+      }
+
+      h2 {
+        font-family: "Bitter", serif;
+        font-size: 22px;
+        margin: 32px 0 12px;
+      }
+
+      ol {
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 8px 0;
+      }
+
+      pre,
+      code {
+        font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      }
+
+      pre {
+        background: #16352a;
+        color: #faf9f2;
+        padding: 16px;
+        border-radius: 12px;
+        overflow-x: auto;
+        font-size: 13px;
+        position: relative;
+      }
+
+      .copy {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #2e7d74;
+        color: #faf9f2;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font: 600 12px "Public Sans", sans-serif;
+        cursor: pointer;
+      }
+
+      .note {
+        background: #fff;
+        border: 1px solid rgba(22, 53, 42, 0.12);
+        border-left: 4px solid var(--sawgrass);
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+
+      a {
+        color: var(--teal);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Add the Lesson Finder chatbot to Wix</h1>
+      <p>
+        evergladesliteracy.org is a Wix site. Paste one script into Wix Custom
+        Code to float the chat launcher on every page.
+      </p>
+    </header>
+    <main>
+      <p class="note">
+        Preferred path: <strong>Settings → Custom Code</strong> (premium plan
+        with a connected domain). Do not use the editor’s Embed HTML box for
+        the floating launcher — Wix sandboxes that code in an iframe and the
+        bubble cannot sit on the page. Use the iframe URL below only if you
+        want the chat panel inside a page section.
+      </p>
+
+      <h2>1. Custom Code (floating launcher)</h2>
+      <ol>
+        <li>Open the Wix dashboard for evergladesliteracy.org.</li>
+        <li>Go to <strong>Settings → Custom Code → + Add Custom Code</strong>.</li>
+        <li>Name it <em>Everglades Lesson Finder</em>.</li>
+        <li>Paste the snippet below.</li>
+        <li>
+          Add to pages: <strong>All pages</strong>, load code
+          <strong>once</strong>. Place code in: <strong>Body – end</strong>.
+        </li>
+        <li>Click Apply, then Publish. The widget only runs on the live site, not in the editor.</li>
+      </ol>
+      <pre id="snippet-wrap"><button class="copy" type="button" data-copy="snippet">Copy</button><code id="snippet"></code></pre>
+
+      <h2>2. Embed a Site (inline panel, optional)</h2>
+      <p>
+        If Custom Code is unavailable, add <strong>Embed Code → Embed a Site</strong>
+        and paste this URL. Size the box at least 380×520. Right-click the
+        embed → <strong>Show on All Pages</strong> if you want it site-wide.
+      </p>
+      <pre><button class="copy" type="button" data-copy="iframe">Copy</button><code id="iframe-url"></code></pre>
+
+      <h2>3. Custom Element (optional)</h2>
+      <p>
+        In Wix Studio / Editor: Add → Embed → Custom Element. Tag name
+        <code>everglades-lesson-finder</code>, source URL
+        <code id="widget-url"></code>. The panel fills the element’s box.
+        Preview: <a href="./wix-custom-element.html">custom element demo</a>.
+      </p>
+
+      <p>
+        Local demo of the floating widget:
+        <a href="./">open the host page</a>.
+      </p>
+    </main>
+
+    <script>
+      const origin = location.origin.replace(/\/$/, "");
+      const widgetSrc = origin + "/widget.js";
+      const iframeSrc = origin + "/wix-embed.html";
+      document.getElementById("snippet").textContent = [
+        "<script>",
+        "(function () {",
+        "  if (window.__elfWidgetLoaded) return;",
+        "  window.__elfWidgetLoaded = true;",
+        "  var s = document.createElement('script');",
+        "  s.src = " + JSON.stringify(widgetSrc) + ";",
+        "  s.defer = true;",
+        "  s.setAttribute('data-elf-widget', '');",
+        "  (document.documentElement || document.body).appendChild(s);",
+        "})();",
+        "</" + "script>",
+      ].join("\n");
+      document.getElementById("iframe-url").textContent = iframeSrc;
+      document.getElementById("widget-url").textContent = widgetSrc;
+
+      document.querySelectorAll(".copy").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var key = btn.getAttribute("data-copy");
+          var text =
+            key === "iframe"
+              ? iframeSrc
+              : document.getElementById("snippet").textContent;
+          navigator.clipboard.writeText(text).then(function () {
+            btn.textContent = "Copied";
+            setTimeout(function () {
+              btn.textContent = "Copy";
+            }, 1500);
+          });
+        });
+      });
+    </script>
+    <script src="./widget.js" defer data-elf-widget></script>
+  </body>
+</html>
