@@ -1,7 +1,8 @@
 {
   "mcpServers": {
     "n8n": {
-      "url": "${env:N8N_API_URL}/mcp-server/http",
+      "type": "http",
+      "url": "https://evergladesfoundation.app.n8n.cloud/mcp-server/http",
       "headers": {
         "Authorization": "Bearer ${env:N8N_MCP_TOKEN}"
       }
