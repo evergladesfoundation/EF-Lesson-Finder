@@ -8,7 +8,9 @@ export interface Lesson {
   ngsssStandards: string[];
   fundamentalConcept: string;
   summary: string;
+  /** Google Drive folder for the lesson materials. */
   lessonUrl: string;
+  /** Direct PDF download. Empty when the index has no public PDF (e.g. 6.3). */
   pdfUrl: string;
 }
 
