@@ -1,0 +1,13 @@
+/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+  Cross-Origin-Resource-Policy: cross-origin
+  Content-Security-Policy: frame-ancestors *
+
+/widget.js
+  Cache-Control: public, max-age=300
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/wix-embed.html
+  Content-Security-Policy: frame-ancestors *
