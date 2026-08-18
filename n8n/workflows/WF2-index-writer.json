@@ -109,35 +109,40 @@
         "operation": "update",
         "workbook": {
           "__rl": true,
-          "value": "__SET_WORKBOOK_ID_IN_UI__",
-          "mode": "id"
+          "value": "01CL7GLQNXIJZA3ILWP5DIBVH6WQING6Q4",
+          "mode": "list",
+          "cachedResultName": "Everglades Master Lesson Index.xlsx",
+          "cachedResultUrl": "https://evergladesfoundation-my.sharepoint.com/personal/yacosta_evergladesfoundation_org/_layouts/15/Doc.aspx?sourcedoc=%7B0D7242B7-76A1-467F-80D4-FEB410D37A1C%7D&file=Everglades%20Master%20Lesson%20Index.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1"
         },
         "worksheet": {
           "__rl": true,
           "value": "Lesson Index",
           "mode": "name"
         },
-        "dataMode": "autoMapInputData",
+        "useRange": true,
+        "range": "={{ $json.range }}",
+        "dataMode": "raw",
+        "data": "={{ $json.values }}",
         "options": {
-          "rawData": false
+          "rawData": true
         }
       },
       "id": "c1cca2dc-0ad2-4388-be46-36cff1f91ed9",
       "name": "Write to Master Index (OneDrive)",
       "type": "n8n-nodes-base.microsoftExcel",
-      "typeVersion": 2,
+      "typeVersion": 2.2,
       "position": [
-        448,
+        680,
         0
       ],
-      "notes": "Skipped when the nightly crawl found no structural changes.",
+      "notes": "Writes A5:O (header + rows). Education columns on existing Lesson IDs are preserved by Merge Index Rows.",
       "credentials": {
         "microsoftExcelOAuth2Api": {
           "id": "ZyFPqg5jbq4Q1reg",
           "name": "Microsoft Excel OAuth2 API"
         }
       },
-      "onError": "continueRegularOutput"
+      "onError": "stopWorkflow"
     },
     {
       "parameters": {
@@ -210,6 +215,58 @@
           "name": "Microsoft Outlook OAuth2 API"
         }
       }
+    },
+    {
+      "id": "excel-read-current",
+      "name": "Read Current Index",
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.2,
+      "position": [
+        360,
+        0
+      ],
+      "onError": "stopWorkflow",
+      "alwaysOutputData": true,
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "ZyFPqg5jbq4Q1reg",
+          "name": "Microsoft Excel OAuth2 API"
+        }
+      },
+      "parameters": {
+        "resource": "worksheet",
+        "operation": "readRows",
+        "workbook": {
+          "__rl": true,
+          "value": "01CL7GLQNXIJZA3ILWP5DIBVH6WQING6Q4",
+          "mode": "list",
+          "cachedResultName": "Everglades Master Lesson Index.xlsx",
+          "cachedResultUrl": "https://evergladesfoundation-my.sharepoint.com/personal/yacosta_evergladesfoundation_org/_layouts/15/Doc.aspx?sourcedoc=%7B0D7242B7-76A1-467F-80D4-FEB410D37A1C%7D&file=Everglades%20Master%20Lesson%20Index.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "Lesson Index",
+          "mode": "name"
+        },
+        "useRange": true,
+        "range": "A5:O80",
+        "options": {
+          "rawData": false
+        }
+      }
+    },
+    {
+      "id": "excel-merge-rows",
+      "name": "Merge Index Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const EDUCATION = [\n  'Theme / Topic',\n  'Summary of Lesson',\n  'Topic Tags',\n  'Fundamental Concepts',\n  'Standards (as published)',\n  'Standards Framework',\n];\nconst COLS = [\n  'Lesson ID', 'Grade', 'Grade Sort', 'Theme / Topic', 'Lesson #',\n  'Title of Lesson', 'Summary of Lesson', 'Topic Tags', 'Fundamental Concepts',\n  'Standards (as published)', 'Standards Framework', 'lessonUrl', 'pdfUrl',\n  'Status', 'Notes',\n];\nconst MACHINE = COLS.filter(c => c !== 'Lesson ID' && !EDUCATION.includes(c));\n\nfunction normId(v) {\n  if (v === undefined || v === null) return '';\n  return String(v).trim();\n}\nfunction idsMatch(a, b) {\n  const sa = normId(a), sb = normId(b);\n  if (!sa || !sb) return false;\n  if (sa === sb) return true;\n  const na = Number(sa), nb = Number(sb);\n  return sa !== '' && sb !== '' && !Number.isNaN(na) && !Number.isNaN(nb) && na === nb;\n}\n\nconst incoming = $('Shape Spreadsheet Rows').all().map(i => i.json);\nconst existingRaw = $input.all().map(i => i.json);\nconst existing = [];\nconst seenExisting = new Set();\nfor (const r of existingRaw) {\n  const id = normId(r['Lesson ID']);\n  if (!id || id === 'Lesson ID') continue;\n  const key = Number(id) && !Number.isNaN(Number(id)) ? String(Number(id)) : id;\n  if (seenExisting.has(key)) continue;\n  seenExisting.add(key);\n  existing.push(r);\n}\n\nconst usedIncoming = new Set();\nconst merged = [];\n\nfor (const old of existing) {\n  const inc = incoming.find(x => idsMatch(x['Lesson ID'], old['Lesson ID']));\n  if (!inc) {\n    merged.push(old);\n    continue;\n  }\n  usedIncoming.add(inc);\n  const row = { ...old };\n  for (const k of MACHINE) {\n    if (inc[k] !== undefined && inc[k] !== null && inc[k] !== '') row[k] = inc[k];\n  }\n  merged.push(row);\n}\n\nfor (const inc of incoming) {\n  if (usedIncoming.has(inc)) continue;\n  if (existing.some(old => idsMatch(old['Lesson ID'], inc['Lesson ID']))) continue;\n  merged.push(inc);\n}\n\nconst values = [COLS, ...merged.map(r => COLS.map(c => (r[c] === undefined || r[c] === null ? '' : r[c])))];\nconst endRow = 4 + values.length; // header at row 5\nreturn [{ json: { values, range: `A5:O${endRow}`, rowCount: merged.length } }];\n"
+      }
     }
   ],
   "connections": {
@@ -268,7 +325,7 @@
       "main": [
         [
           {
-            "node": "Write to Master Index (OneDrive)",
+            "node": "Read Current Index",
             "type": "main",
             "index": 0
           }
@@ -307,6 +364,28 @@
           }
         ]
       ]
+    },
+    "Read Current Index": {
+      "main": [
+        [
+          {
+            "node": "Merge Index Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Index Rows": {
+      "main": [
+        [
+          {
+            "node": "Write to Master Index (OneDrive)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -316,5 +395,5 @@
   },
   "pinData": {},
   "meta": null,
-  "versionId": "8450079d-0fb7-4c9e-b577-a2de320d9cc8"
+  "versionId": "8e2d6f22-6ef8-4dc4-bf5f-46f4c8bd82de"
 }

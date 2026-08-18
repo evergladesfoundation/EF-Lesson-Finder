@@ -110,14 +110,24 @@ Re-run the SQL in the Supabase editor only if standing up a new project.
 
 ## WF2 Master Index workbook
 
-**Write to Master Index (OneDrive)** still has placeholder `__SET_WORKBOOK_ID_IN_UI__`. That is why WF2 returned `Not a valid Workbook ID` after a green crawl.
+The Excel node is pointed at **Everglades Master Lesson Index.xlsx** in Yezid's OneDrive (`yacosta@evergladesfoundation.org`). Worksheet **Lesson Index**. **On Error** is **Stop Workflow**, so a failed write fails WF1 instead of showing green.
 
-I cannot see your OneDrive files from here. In n8n, open [WF2](https://evergladesfoundation.app.n8n.cloud/workflow/uht4O5B19PaCoC21) → **Write to Master Index (OneDrive)**:
+The **Microsoft Excel OAuth2 API** credential lives in the personal n8n project (it was moved off CMD Fech so this node is editable there). CDMP Application Monitor in CMD Fech may show the same read-only credential notice until that credential is shared back with CMD Fech; CDMP is inactive.
 
-1. Workbook **From list** — pick the Master Lesson Index file. Worksheet name is already `Lesson Index`. The file must live in **OneDrive** for the **Microsoft Excel OAuth2 API** account (not a SharePoint library).
-2. Node settings → **On Error** → **Stop Workflow** (do not continue). Otherwise a bad workbook ID is swallowed and WF1 still shows success.
+Header row is **Excel row 5** (rows 1–4 are the title/legend). WF2 reads `A5:O80`, merges crawl rows onto existing Lesson IDs, and writes the compact table back. Education-owned columns on a matching Lesson ID are left alone:
 
-Save, then re-run WF1. Do not paste the workbook ID into chat unless the From-list picker is empty.
+- Theme / Topic
+- Summary of Lesson
+- Topic Tags
+- Fundamental Concepts
+- Standards (as published)
+- Standards Framework
+
+Machine-owned columns (Grade, title, URLs, Status, Notes) update from Postgres. New Lesson IDs from the crawl are appended.
+
+Do not switch the write node back to Auto-Map. Auto-Map overwrites every column, including empty Postgres summaries, which would wipe Education's text.
+
+If the From-list picker is empty in the UI, the file is not in that Excel account's OneDrive (for example it lives only on a SharePoint site). The current file is in personal OneDrive, not SharePoint.
 
 ## Widget search webhook
 
