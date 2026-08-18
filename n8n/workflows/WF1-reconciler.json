@@ -336,7 +336,7 @@
         "operation": "executeQuery",
         "query": "-- Upsert the lesson. Education-owned columns are never touched.\nINSERT INTO lessons (\n    lesson_id, folder_id, grade_label, grade_sort, unit,\n    lesson_number, title, lesson_url, status, machine_notes,\n    seen_this_run, last_seen_at\n) VALUES (\n    $1, $2, $3, $4, $5, $6, $7, $8,\n    CASE WHEN $9 = '' THEN 'Draft' ELSE $9 END,\n    $10, true, now()\n)\nON CONFLICT (lesson_id) DO UPDATE SET\n    folder_id     = EXCLUDED.folder_id,\n    grade_label   = EXCLUDED.grade_label,\n    grade_sort    = EXCLUDED.grade_sort,\n    unit          = EXCLUDED.unit,\n    lesson_number = EXCLUDED.lesson_number,\n    title         = EXCLUDED.title,\n    lesson_url    = EXCLUDED.lesson_url,\n    machine_notes = EXCLUDED.machine_notes,\n    seen_this_run = true,\n    last_seen_at  = now(),\n    -- Never demote a human-approved Active lesson, and never auto-promote.\n    status = CASE\n        WHEN lessons.status = 'Active' AND EXCLUDED.status = 'Under review'\n            THEN 'Under review'\n        WHEN lessons.status = 'Active' THEN 'Active'\n        ELSE EXCLUDED.status\n    END\nRETURNING lesson_id;",
         "options": {
-          "queryReplacement": "={{ $json.lessonId }},{{ $json.folderId }},{{ $json.gradeLabel }},{{ $json.gradeSort }},{{ $json.unit }},{{ $json.lessonNumber }},{{ $json.title }},{{ $json.lessonUrl }},{{ $json.derivedStatus }},{{ $json.flagsText }}"
+          "queryReplacement": "={{ [$json.lessonId, $json.folderId, $json.gradeLabel, $json.gradeSort, $json.unit, $json.lessonNumber, $json.title, $json.lessonUrl, $json.derivedStatus, $json.flagsText] }}"
         }
       },
       "credentials": {
@@ -683,5 +683,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "10b3fbd7-35c2-4afc-854a-7f0a2a846279"
+  "versionId": "f3555c5a-4b5e-4f30-bf10-b56de85bc163"
 }
