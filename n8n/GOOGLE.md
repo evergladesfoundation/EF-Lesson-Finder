@@ -10,32 +10,26 @@ Instance: [evergladesfoundation.app.n8n.cloud](https://evergladesfoundation.app.
 
 ---
 
-## Plan: every file and folder in Shared with me
+## Plan: every file and folder in My Drive
 
-The Teacher Toolkit is everything that account can see under:
+Catalog (browser): [https://drive.google.com/drive/u/2/my-drive](https://drive.google.com/drive/u/2/my-drive)
 
-[https://drive.google.com/drive/shared-with-me](https://drive.google.com/drive/shared-with-me)
+- `/u/2/` is the **third** Google account signed into Edge. Click the avatar and confirm it is `info@evergladesliteracy.org`.
+- `/my-drive` is a **view**, not a folder ID. Do not paste `my-drive` into a Folder ID field.
 
-**You do not need a folder ID.** Do not paste `shared-with-me` into a Folder ID field.
+**You do not need a folder ID.** WF1 crawls My Drive from **root** and every nested folder.
 
-If Shared with me is empty, the owner must **share** the parent folders (or a Shared drive) with `info@evergladesliteracy.org` as Viewer. Sharing the parent once is enough; do not share each file.
+### n8n WF1 — list root, then recurse
 
-### n8n WF1 — list, then recurse
-
-`sharedWithMe = true` returns only **top-level** shares. Nested files are missing until you walk folders.
-
-1. Search: `sharedWithMe = true and trashed = false`, Return All on, credential `EF Google Drive`.
+1. Search: `'root' in parents and trashed = false`, Return All on, credential `EF Google Drive`.
 2. Files → WF2. Folders → list children with `'FOLDER_ID' in parents and trashed = false`.
 3. Repeat for nested folders.
 
-Always send `includeItemsFromAllDrives=true` and `supportsAllDrives=true`. If the Google Drive node cannot set those, use HTTP Request with the same credential:
+If Search is empty, use HTTP Request with the same credential:
 
 ```
 GET https://www.googleapis.com/drive/v3/files
-  q=sharedWithMe=true and trashed=false
-  includeItemsFromAllDrives=true
-  supportsAllDrives=true
-  corpora=allDrives
+  q='root' in parents and trashed=false
   fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime)
 ```
 
@@ -51,7 +45,7 @@ Children: same URL with `q='FOLDER_ID' in parents and trashed=false`.
 4. Confirm the signed-in Google user is **`info@evergladesliteracy.org`**. If it is a different account, **Sign in with Google** on *this same credential* and switch — do not add a duplicate.
 5. Leave authentication as **Managed OAuth2**.
 
-A Drive 404 or empty list usually means the node searched My Drive, skipped `supportsAllDrives`, or the owner has not shared the folders with this mailbox.
+A Drive 404 or empty list usually means n8n OAuth is a different Google user than the `/u/2/` profile in Edge.
 
 ---
 
@@ -66,7 +60,7 @@ A Drive 404 or empty list usually means the node searched My Drive, skipped `sup
 | Check | Status |
 | --- | --- |
 | n8n Google Drive OAuth | **Already in n8n** — do not recreate |
-| Signed-in Google user | `info@evergladesliteracy.org` |
+| Signed-in Google user | `info@evergladesliteracy.org` (same as Edge `/u/2/`) |
 | Credential name | `EF Google Drive` |
-| Catalog | All Shared with me files **and** nested folders (recurse) |
+| Catalog | [My Drive](https://drive.google.com/drive/u/2/my-drive) — all files and nested folders from `root` |
 | Folder ID | **Not required** |
