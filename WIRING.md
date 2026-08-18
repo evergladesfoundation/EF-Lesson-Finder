@@ -69,9 +69,13 @@ Also include Shared with me only if those items are not already in My Drive (sho
 
 ### 3. Import workflows (hard order) — **you are here**
 
-The four JSON exports are **not in this repo yet**. In n8n: open a workflow → **⋯ → Download**, save as `n8n/workflows/WF2*.json`, `WF1*.json`, `WF4*.json`, `WF3*.json`.
+There is **nothing to download from this GitHub repo.** `n8n/workflows/` has no JSON yet ([PR #5](https://github.com/evergladesfoundation/EF-Lesson-Finder/pull/5) is only a placeholder README).
 
-Then in n8n: **⋯ → Import from File**:
+**If WF1/WF2 already exist** on [evergladesfoundation.app.n8n.cloud](https://evergladesfoundation.app.n8n.cloud): open **Overview → Workflows**. Do not download first — edit them in place (Drive Search from `'root'`, recurse, Execute Sub-workflow → WF2). Optional backup: open a workflow → **⋯ → Download**.
+
+**If they do not exist:** they have to be **built** (or imported from a JSON someone already exported). This repo cannot supply that file until it is committed.
+
+Then in n8n, if you *do* have JSON files: **⋯ → Import from File**:
 
 1. **WF2** first (per-file processor). Assign credentials. Save. Copy its ID from the URL.
 2. **WF1**. Assign `EF Google Drive` + `EF Postgres` (+ OpenAI if on the canvas). Open **Execute Sub-workflow** → **From list → WF2**. Drive crawl = My Drive from `'root'` **and** recurse all folders (step 1). No folder ID. Save. Leave **inactive**.
