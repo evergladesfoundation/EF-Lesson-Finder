@@ -456,6 +456,22 @@
         240
       ],
       "parameters": {}
+    },
+    {
+      "id": "wf1-ssl-note",
+      "name": "Postgres SSL",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -40
+      ],
+      "parameters": {
+        "content": "## Postgres SSL\n\nIf **Mark Crawl Start** fails with `self-signed certificate in certificate chain`:\n\n1. Credentials \u2192 **Postgres account**\n2. Re-enter host / user / password / port **5432**\n3. SSL = **Require**\n4. **Ignore SSL Issues** = **On** (n8n Cloud cannot trust the Supabase CA; the session is still encrypted)\n5. Retest \u2192 Save \u2192 Test this workflow again\n\nDo not use port 6543. Do not disable SSL.",
+        "height": 380,
+        "width": 380,
+        "color": 5
+      }
     }
   ],
   "connections": {
@@ -667,5 +683,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "ebda9986-cd54-478a-8407-1906e3b37461"
+  "versionId": "8ed3c977-5a15-4664-816d-9f5dad5f741d"
 }

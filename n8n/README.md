@@ -43,9 +43,34 @@ These names are what the nodes actually bind to (not the `EF *` aliases from ear
 Missing for WF4: an **OpenAI** credential on the Chat Model node (`gpt-4.1-mini`).
 The instance has Anthropic keys, not OpenAI.
 
+## Postgres SSL (`self-signed certificate in certificate chain`)
+
+n8n Cloud does not trust Supabase's Postgres CA. **Mark Crawl Start** fails on
+`UPDATE lessons SET seen_this_run = false;` until the credential ignores CA
+verification. Traffic is still encrypted (`SSL: Require`); n8n just will not
+reject Supabase's chain.
+
+1. Open [Postgres account](https://evergladesfoundation.app.n8n.cloud/home/credentials) (type Postgres).
+2. Re-enter the connection (a partial API update cannot set only the SSL flag — n8n replaces the whole `data` object):
+
+   | Field | Value |
+   | --- | --- |
+   | Host | Session pooler `aws-0-<region>.pooler.supabase.com` (IPv4) or `db.<project-ref>.supabase.co` if it resolves |
+   | Database | `postgres` |
+   | User | `postgres.<project-ref>` on the pooler, or `postgres` on direct |
+   | Password | Database password — not the `anon` / `service_role` keys |
+   | Port | **5432** (session pooler or direct). Not **6543** (transaction pooler) |
+   | SSL | **Require** |
+   | **Ignore SSL Issues** | **On** |
+
+3. Click **Retest** until it says the connection works, then **Save**.
+4. Re-run WF1 **Test workflow**.
+
+Do not turn SSL off. Do not use port 6543.
+
 ## First crawl (WF1)
 
-1. Open [WF1 Reconciler](https://evergladesfoundation.app.n8n.cloud/workflow/FDM2q7QnvtRCmgu4).
+1. Fix Postgres SSL above, then open [WF1 Reconciler](https://evergladesfoundation.app.n8n.cloud/workflow/FDM2q7QnvtRCmgu4).
 2. Confirm **Curriculum Root** is folder `1iT1_e65k_2yzXPpa-mMMt-yf-ajJpwCH` (Teacher Toolkit).
 3. Confirm **Run Index Writer** points at WF2 (`uht4O5B19PaCoC21`). It continues if Excel is still missing a workbook ID.
 4. Click **Test workflow**. Leave the nightly 2am trigger **inactive** until that run is green.
