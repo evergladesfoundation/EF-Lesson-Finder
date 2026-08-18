@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "n8n": {
+      "url": "${env:N8N_API_URL}/mcp-server/http",
+      "headers": {
+        "Authorization": "Bearer ${env:N8N_MCP_TOKEN}"
+      }
+    }
+  }
+}
