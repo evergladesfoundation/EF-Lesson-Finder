@@ -63,4 +63,4 @@ A Drive 404 or empty list usually means n8n OAuth is a different Google user tha
 | `EF Postgres` / `EF OpenAI` | **Confirmed** |
 | Catalog | [My Drive](https://drive.google.com/drive/u/2/my-drive) — all files and nested folders from `root` |
 | Folder ID | **Not required** |
-| Next | Import **WF2**, then **WF1** (Drive Search `'root' in parents`, recurse, call WF2) |
+| Next | Import `n8n/workflows/WF2-process-lesson.json`, then `WF1-crawl-my-drive.json`. Re-point Call WF2 From list. |

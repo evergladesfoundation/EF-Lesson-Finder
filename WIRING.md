@@ -72,21 +72,19 @@ Also include Shared with me only if those items are not already in My Drive (sho
 
 ### 3. Import workflows (hard order) — **you are here**
 
-There is **nothing to download from this GitHub repo.** `n8n/workflows/` has no JSON yet ([PR #5](https://github.com/evergladesfoundation/EF-Lesson-Finder/pull/5) is only a placeholder README).
+Recreated JSON is in this PR under `n8n/workflows/`:
 
-**If WF1/WF2 already exist** on [evergladesfoundation.app.n8n.cloud](https://evergladesfoundation.app.n8n.cloud): open **Overview → Workflows**. Do not download first — edit them in place (Drive Search from `'root'`, recurse, Execute Sub-workflow → WF2). Optional backup: open a workflow → **⋯ → Download**.
+- [`n8n/workflows/WF2-process-lesson.json`](n8n/workflows/WF2-process-lesson.json)
+- [`n8n/workflows/WF1-crawl-my-drive.json`](n8n/workflows/WF1-crawl-my-drive.json)
 
-**If they do not exist:** they have to be **built** (or imported from a JSON someone already exported). This repo cannot supply that file until it is committed.
+On [evergladesfoundation.app.n8n.cloud](https://evergladesfoundation.app.n8n.cloud): **⋯ → Import from File**. Both files have `"active": false`.
 
-Then in n8n, if you *do* have JSON files: **⋯ → Import from File**:
+Then in n8n:
 
-1. **WF2** first (per-file processor). Assign credentials. Save. Copy its ID from the URL.
-2. **WF1**. Assign `EF Google Drive` + `EF Postgres` (+ OpenAI if on the canvas). Open **Execute Sub-workflow** → **From list → WF2**. Drive crawl = My Drive from `'root'` **and** recurse all folders (step 1). No folder ID. Save. Leave **inactive**.
-3. **WF4** (Excel). Pick the workbook From list or paste the Graph item ID.
-4. **Execute WF1 once** (Test workflow). Confirm `SELECT COUNT(*) FROM lessons;` in Supabase.
-5. **WF3** last (chatbot). Do not activate until `lessons` has rows.
-
-Full click-path: `n8n/IMPORT.md` on [PR #5](https://github.com/evergladesfoundation/EF-Lesson-Finder/pull/5).
+1. **WF2** first. Assign **EF Google Drive**, **EF OpenAI**, **EF Postgres** if empty. Save. Copy the ID from the URL.
+2. **WF1**. Assign **EF Google Drive**. Open **Call WF2** → **From list** → the WF2 you just saved. First test keeps **Limit 25**. Save. Leave **inactive**.
+3. **Execute WF1 once**. Confirm `SELECT COUNT(*) FROM lessons;` in Supabase. Then turn on **Return All**.
+4. **WF3** (chatbot) is still not in this export — import it only after `lessons` has rows.
 
 ### 4. Cursor (optional, for agents)
 
@@ -101,7 +99,7 @@ npm --prefix widget ci
 npm --prefix widget run dev
 ```
 
-Search still uses mock data. `widget/src/search.ts` is written so you can later swap it for `POST /chat` against WF3. Do not point the embed at n8n until step 3 has a populated `lessons` table and a working WF3 test chat.
+Search still uses the git catalog (PR #7 Master Index until Phase 2). `widget/src/search.ts` is written so you can later swap it for `POST /chat` against WF3.
 
 ---
 
