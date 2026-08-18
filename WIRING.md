@@ -3,10 +3,10 @@
 The widget you can run today searches **mock lessons in git**. Production search is meant to go:
 
 ```
-Google Drive (info@evergladesliteracy.org)
+Google Drive Shared with me  (info@evergladesliteracy.org)
         │  existing n8n Google Drive credential
         ▼
-n8n Cloud  WF1 (crawl folder) → WF2 (extract / embed / upsert)
+n8n Cloud  WF1 (search sharedWithMe) → WF2 (extract / embed / upsert)
         │
         ▼
 Supabase Postgres  (`lessons` table)
@@ -33,13 +33,31 @@ Do not put passwords or OAuth tokens in git. OAuth stays in the n8n UI.
 
 ## Wire it (in this order)
 
-### 1. Point n8n at the Toolkit folder
+### 1. Point n8n at Shared with me
 
-OAuth is not the folder. Open the Teacher Toolkit in Drive (signed in as `info@evergladesliteracy.org`). Copy the last segment of:
+The lesson plans are **not** in My Drive. They appear for `info@evergladesliteracy.org` at:
 
-`https://drive.google.com/drive/folders/<GOOGLE_DRIVE_FOLDER_ID>`
+[https://drive.google.com/drive/shared-with-me](https://drive.google.com/drive/shared-with-me)
 
-Keep that ID. You will paste it on the WF1 Google Drive node after import.
+That URL is a **view**, not a folder ID. WF1 must not use a My Drive folder picker. Use one of these:
+
+**A. Crawl everything shared with that account (default)**
+
+On the WF1 Google Drive node:
+
+- Resource: **File/Folder**
+- Operation: **Search**
+- Search Method: **Advanced Search**
+- Query String: `sharedWithMe = true and trashed = false`
+- Return All: on
+
+If the node 404s or returns nothing, use an **HTTP Request** node with the same Google credential:
+
+`GET https://www.googleapis.com/drive/v3/files?q=sharedWithMe=true and trashed=false&includeItemsFromAllDrives=true&supportsAllDrives=true&fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime)`
+
+**B. Crawl one shared folder (preferred if all plans sit in a single folder)**
+
+From Shared with me, **open that folder** until the address bar looks like `https://drive.google.com/drive/folders/<id>`. That `<id>` is `GOOGLE_DRIVE_FOLDER_ID`. Paste it on the Drive node (By ID or By URL). Do not paste `shared-with-me` as an ID.
 
 ### 2. Finish the other n8n credentials
 
@@ -62,7 +80,7 @@ The four JSON exports are **not in this repo yet**. In n8n: open a workflow → 
 Then in n8n: **⋯ → Import from File**:
 
 1. **WF2** first (per-file processor). Assign credentials. Save. Copy its ID from the URL.
-2. **WF1**. Assign `EF Google Drive` + `EF Postgres` (+ OpenAI if on the canvas). Open **Execute Sub-workflow** → **From list → WF2** (the old ID from another instance will fail). Paste `GOOGLE_DRIVE_FOLDER_ID` on the Drive node. Save. Leave **inactive**.
+2. **WF1**. Assign `EF Google Drive` + `EF Postgres` (+ OpenAI if on the canvas). Open **Execute Sub-workflow** → **From list → WF2** (the old ID from another instance will fail). Point the Drive node at **Shared with me** (`sharedWithMe = true`) or at the shared folder ID from step 1. Save. Leave **inactive**.
 3. **WF4** (Excel). Pick the workbook From list or paste the Graph item ID.
 4. **Execute WF1 once** (Test workflow). Confirm `SELECT COUNT(*) FROM lessons;` in Supabase.
 5. **WF3** last (chatbot). Do not activate until `lessons` has rows.
@@ -91,7 +109,7 @@ Search still uses mock data. `widget/src/search.ts` is written so you can later 
 | Check | Passes when |
 | --- | --- |
 | Google | Existing n8n credential; user is `info@evergladesliteracy.org` |
-| Drive folder | Folder ID on WF1; no 404 on first crawl |
+| Drive catalog | Shared with me for `info@evergladesliteracy.org`; WF1 uses `sharedWithMe = true` or a real `/folders/<id>` URL |
 | Postgres | Port 5432 + SSL Require; `lessons` count &gt; 0 after WF1 |
 | WF1 → WF2 | Sub-workflow picked **From list** on this instance |
 | Chat | WF3 returns a real lesson before you activate it |
