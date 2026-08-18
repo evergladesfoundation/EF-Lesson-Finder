@@ -1,5 +1,6 @@
 -- Inferred from the live Lesson Finder n8n workflows (WF1/WF2/WF4).
--- This is documentation, not a migration to run against production.
+-- Applied 2026-08-18: seen_this_run plus lesson_assets / servable_assets / sync_state
+-- via n8n/migrations/001_wf1_pipeline.sql. Education-owned columns were not changed.
 
 -- lessons: Education-owned narrative columns are never overwritten by WF1.
 -- WF1 only upserts identity / Drive location / derived status / machine_notes.

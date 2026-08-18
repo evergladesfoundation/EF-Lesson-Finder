@@ -73,9 +73,20 @@ connects to itself. That is not Supabase.
 4. Click **Retest** until n8n says the connection works, then **Save**.
 5. Re-run WF1 **Test workflow**.
 
+## Schema (WF1)
+
+`lessons` is Education's table. WF1 also needs a per-run flag and asset tables.
+Those were applied on 2026-08-18 (`n8n/migrations/001_wf1_pipeline.sql`):
+
+- `lessons.seen_this_run boolean not null default false`
+- `lesson_assets` + view `servable_assets`
+- `sync_state` row `id = 'drive'`
+
+Re-run the SQL in the Supabase editor only if standing up a new project.
+
 ## First crawl (WF1)
 
-1. Fix Postgres SSL above, then open [WF1 Reconciler](https://evergladesfoundation.app.n8n.cloud/workflow/FDM2q7QnvtRCmgu4).
+1. Open [WF1 Reconciler](https://evergladesfoundation.app.n8n.cloud/workflow/FDM2q7QnvtRCmgu4).
 2. Confirm **Curriculum Root** is folder `1iT1_e65k_2yzXPpa-mMMt-yf-ajJpwCH` (Teacher Toolkit).
 3. Confirm **Run Index Writer** points at WF2 (`uht4O5B19PaCoC21`). It continues if Excel is still missing a workbook ID.
 4. Click **Test workflow**. Leave the nightly 2am trigger **inactive** until that run is green.
