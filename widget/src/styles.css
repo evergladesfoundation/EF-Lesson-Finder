@@ -231,6 +231,13 @@
   gap: 8px;
   padding-top: 8px;
   border-top: 1px solid rgba(22, 53, 42, 0.08);
+  flex-wrap: wrap;
+}
+
+.elf-card-links {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
 }
 
 .elf-standard {
