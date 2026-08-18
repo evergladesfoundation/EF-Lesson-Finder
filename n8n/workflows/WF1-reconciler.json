@@ -443,8 +443,7 @@
         "options": {
           "waitForSubWorkflow": true
         }
-      },
-      "onError": "continueRegularOutput"
+      }
     },
     {
       "id": "wf1-manual-trigger",
@@ -683,5 +682,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "99407040-71ee-426c-9a85-4e74eb5fd485"
+  "versionId": "0f5d91a2-5ce3-44a2-ac97-c75a8b118a4a"
 }

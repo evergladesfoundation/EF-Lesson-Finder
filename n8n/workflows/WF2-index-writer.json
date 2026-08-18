@@ -130,14 +130,14 @@
         448,
         0
       ],
-      "onError": "continueRegularOutput",
       "notes": "Skipped when the nightly crawl found no structural changes.",
       "credentials": {
         "microsoftExcelOAuth2Api": {
           "id": "ZyFPqg5jbq4Q1reg",
           "name": "Microsoft Excel OAuth2 API"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {

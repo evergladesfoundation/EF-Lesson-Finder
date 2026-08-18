@@ -103,12 +103,18 @@ Re-run the SQL in the Supabase editor only if standing up a new project.
 
 1. Open [WF1 Reconciler](https://evergladesfoundation.app.n8n.cloud/workflow/FDM2q7QnvtRCmgu4).
 2. Confirm **Curriculum Root** is folder `1iT1_e65k_2yzXPpa-mMMt-yf-ajJpwCH` (Teacher Toolkit).
-3. Confirm **Run Index Writer** points at WF2 (`uht4O5B19PaCoC21`). It continues if Excel is still missing a workbook ID.
+3. Confirm **Run Index Writer** points at WF2 (`uht4O5B19PaCoC21`). If the OneDrive write fails, WF1 now **fails** (it no longer swallows that error).
 4. Click **Test workflow**. Leave the nightly 2am trigger **inactive** until that run is green.
 5. `SELECT count(*) FROM lessons WHERE status = 'Active';` should go above 0.
 6. Then the widget stops using the bundled fallback catalog and serves n8n rows.
 
-WF2 still has workbook placeholder `__SET_WORKBOOK_ID_IN_UI__`. Pick the Master Index from the Excel node **From list** before trusting the spreadsheet write.
+## WF2 Master Index workbook
+
+**Write to Master Index (OneDrive)** still has placeholder `__SET_WORKBOOK_ID_IN_UI__`. That is why WF2 returned `Not a valid Workbook ID` after a green crawl.
+
+I cannot see your OneDrive files from here. In n8n, open [WF2](https://evergladesfoundation.app.n8n.cloud/workflow/uht4O5B19PaCoC21) → **Write to Master Index (OneDrive)** → Workbook **From list** and pick the Master Lesson Index workbook. Worksheet name is already `Lesson Index`. The file must live in **OneDrive** for the **Microsoft Excel OAuth2 API** account (not a SharePoint library). Save, then re-run WF1.
+
+Do not paste the workbook ID into chat unless the From-list picker is empty.
 
 ## Widget search webhook
 
