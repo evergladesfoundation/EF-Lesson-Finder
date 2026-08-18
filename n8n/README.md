@@ -43,6 +43,21 @@ These names are what the nodes actually bind to (not the `EF *` aliases from ear
 Missing for WF4: an **OpenAI** credential on the Chat Model node (`gpt-4.1-mini`).
 The instance has Anthropic keys, not OpenAI.
 
+## Google Drive HTTP Request allowlist
+
+WF1 lists Drive folders with **HTTP Request** nodes (not the native Drive node)
+so it can read shortcuts, permissions, and shared-drive flags. n8n blocks that
+until the credential allows HTTP Request use.
+
+On **Google Drive account** → **Details**:
+
+- Allow using this credential in the HTTP Request node: **On**
+- Allowed domains: **Specific** — `googleapis.com` (not “all domains”)
+
+Do not paste the OAuth token into chat. Do not PATCH this credential via the
+n8n API (a partial update replaces the whole payload and would drop the Google
+login). Save in the UI, then re-run WF1.
+
 ## Postgres SSL (`self-signed certificate in certificate chain`)
 
 n8n Cloud does not trust Supabase's Postgres CA. **Mark Crawl Start** fails on

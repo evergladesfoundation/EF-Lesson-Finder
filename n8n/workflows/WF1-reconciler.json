@@ -467,9 +467,9 @@
         -40
       ],
       "parameters": {
-        "content": "## Postgres credential\n\n**Connection refused / 127.0.0.1:5432** means Host is empty. n8n then talks to itself, not Supabase.\n\n1. Open the **Supabase project** \u2192 **Connect** (or Settings \u2192 Database)\n2. Choose **Session pooler** (port **5432**), not Transaction pooler (6543)\n3. Paste into n8n **Postgres account**:\n\n- Host = `aws-0-<region>.pooler.supabase.com`\n- User = `postgres.<project-ref>`\n- Password = database password\n- Database = `postgres`\n- Port = `5432`\n- SSL = **Require**\n- **Ignore SSL Issues** = **On**\n\n4. Click **Retest** \u2014 it must succeed \u2014 then **Save**\n5. Test this workflow again\n\nDo not leave Host blank. Do not use localhost.",
-        "height": 460,
-        "width": 400,
+        "content": "## Postgres credential\n\n**Connection refused / 127.0.0.1:5432** means Host is empty. n8n then talks to itself, not Supabase.\n\n1. Open the **Supabase project** \u2192 **Connect** (or Settings \u2192 Database)\n2. Choose **Session pooler** (port **5432**), not Transaction pooler (6543)\n3. Paste into n8n **Postgres account**:\n\n- Host = `aws-0-<region>.pooler.supabase.com`\n- User = `postgres.<project-ref>`\n- Password = database password\n- Database = `postgres`\n- Port = `5432`\n- SSL = **Require**\n- **Ignore SSL Issues** = **On**\n\n4. Click **Retest** \u2014 it must succeed \u2014 then **Save**\n5. Test this workflow again\n\nDo not leave Host blank. Do not use localhost.\n\n---\n\n## Google Drive HTTP Request\n\n**List Grade Folders** is an HTTP Request node on Drive v3. n8n blocks that until:\n\nCredentials \u2192 **Google Drive account** \u2192 **Details**\n- Allow in HTTP Request node = **On**\n- Allowed domains = **googleapis.com** (not all)\n\nSave, then Test this workflow. Do not change this via API.",
+        "height": 640,
+        "width": 420,
         "color": 5
       }
     }
@@ -683,5 +683,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "54bcf172-9e31-4eb5-a8fe-44ec73b36846"
+  "versionId": "ed1ebbb2-071e-49bf-be02-28a1fc631191"
 }
