@@ -50,23 +50,28 @@ n8n Cloud does not trust Supabase's Postgres CA. **Mark Crawl Start** fails on
 verification. Traffic is still encrypted (`SSL: Require`); n8n just will not
 reject Supabase's chain.
 
-1. Open [Postgres account](https://evergladesfoundation.app.n8n.cloud/home/credentials) (type Postgres).
-2. Re-enter the connection (a partial API update cannot set only the SSL flag — n8n replaces the whole `data` object):
+`Connection refused` with `127.0.0.1:5432` means **Host is empty**. n8n then
+connects to itself. That is not Supabase.
+
+1. In the **Supabase dashboard**, open the Lesson Finder project → **Connect**
+   (or **Project Settings → Database**).
+2. Copy **Session pooler** (mode session, port **5432**). Do not copy
+   Transaction pooler (port 6543).
+3. Open n8n [Postgres account](https://evergladesfoundation.app.n8n.cloud/home/credentials)
+   and paste:
 
    | Field | Value |
    | --- | --- |
-   | Host | Session pooler `aws-0-<region>.pooler.supabase.com` (IPv4) or `db.<project-ref>.supabase.co` if it resolves |
+   | Host | `aws-0-<region>.pooler.supabase.com` — must not be blank or `localhost` |
    | Database | `postgres` |
-   | User | `postgres.<project-ref>` on the pooler, or `postgres` on direct |
+   | User | `postgres.<project-ref>` |
    | Password | Database password — not the `anon` / `service_role` keys |
-   | Port | **5432** (session pooler or direct). Not **6543** (transaction pooler) |
+   | Port | **5432** |
    | SSL | **Require** |
    | **Ignore SSL Issues** | **On** |
 
-3. Click **Retest** until it says the connection works, then **Save**.
-4. Re-run WF1 **Test workflow**.
-
-Do not turn SSL off. Do not use port 6543.
+4. Click **Retest** until n8n says the connection works, then **Save**.
+5. Re-run WF1 **Test workflow**.
 
 ## First crawl (WF1)
 
