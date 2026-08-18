@@ -1,45 +1,43 @@
 # Google account — `info@evergladesliteracy.org`
 
-The Teacher Toolkit lives in Google Drive. Every Google sign-in for this project (n8n **and** Cursor) must use **`info@evergladesliteracy.org`**, not a personal Gmail and not `yacosta@evergladesfoundation.org`.
+**n8n already has Google credentials.** Do not create a second Google Drive OAuth credential.
 
-Do not paste passwords or OAuth tokens into git. OAuth happens in the browser.
+The Teacher Toolkit is crawled by n8n using that existing credential. The Google user on it should be **`info@evergladesliteracy.org`** (not a personal Gmail, not `yacosta@evergladesfoundation.org`).
 
----
+Do not paste passwords or OAuth tokens into git.
 
-## 1. n8n Cloud — `EF Google Drive`
-
-This is the credential WF1 uses to crawl the Toolkit folder.
-
-1. Open [evergladesfoundation.app.n8n.cloud](https://evergladesfoundation.app.n8n.cloud) and go to **Credentials**.
-2. **Add credential** → **Google Drive OAuth2**.
-3. Name it exactly `EF Google Drive`.
-4. Leave authentication as **Managed OAuth2** (n8n Cloud). No Google Cloud Console project is required.
-5. Click **Sign in with Google**.
-6. Choose **`info@evergladesliteracy.org`**. If Google shows an unverified-app warning, continue with that same account.
-7. **Save**.
-
-Then copy the Toolkit **folder** ID (last segment of `https://drive.google.com/drive/folders/<id>`) into `GOOGLE_DRIVE_FOLDER_ID`. That value is a node parameter, not part of the OAuth credential. A Drive 404 after import usually means the folder ID is a file ID, or the signed-in account cannot see the folder.
-
-Official reference: [Google Managed OAuth2](https://docs.n8n.io/integrations/builtin/credentials/google/oauth-single-service/).
+Instance: [evergladesfoundation.app.n8n.cloud](https://evergladesfoundation.app.n8n.cloud)
 
 ---
 
-## 2. Cursor — Google Drive MCP
+## 1. Use the existing n8n credential
 
-`.cursor/mcp.json` points at Google's remote Drive MCP (`https://drivemcp.googleapis.com/mcp/v1`). After this file is in the workspace:
+1. Open **Credentials** in n8n Cloud.
+2. Open the Google Drive (OAuth2) credential that is already there.
+3. Confirm it is connected. If it is not named `EF Google Drive`, rename it to that so WF1/WF2 can pick it from the dropdown after import.
+4. Confirm the signed-in Google user is **`info@evergladesliteracy.org`**. If it is a different account, click **Sign in with Google** on *this same credential* and switch to that mailbox — do not add a duplicate credential.
+5. Leave authentication as **Managed OAuth2**.
 
-1. In Cursor Desktop, open **Customize → MCP** (or install the [Google Drive plugin](https://cursor.com/marketplace/cursor/google-drive)).
-2. When the Google sign-in window opens, switch account and authenticate as **`info@evergladesliteracy.org`**.
-3. Reload MCP if the server is listed but still unauthorized.
+The Toolkit **folder ID** is a node parameter, not part of OAuth. Copy it from `https://drive.google.com/drive/folders/<id>` into `GOOGLE_DRIVE_FOLDER_ID`. A Drive 404 after import usually means the ID is a file ID, or that Google user cannot see the folder.
 
-Cloud Agents cannot complete that browser OAuth. Desktop Cursor can; a new Cloud Agent after you authenticate may pick up the same team/user connection depending on dashboard MCP settings.
+---
+
+## 2. Cursor MCP (optional, for agents)
+
+`.cursor/mcp.json` includes:
+
+- **n8n** — talk to the instance that already holds Google credentials (`https://evergladesfoundation.app.n8n.cloud/mcp-server/http`). Complete n8n OAuth in Cursor Desktop when prompted.
+- **google-drive** — Google’s remote Drive MCP, only if a Cloud Agent needs to read Drive *outside* n8n. Authenticate as `info@evergladesliteracy.org`.
+
+Cloud Agents cannot complete those browser OAuth windows. The Lesson Finder crawl uses the n8n credential in section 1; that path does not need Cursor Google OAuth.
 
 ---
 
 ## Check
 
-| Check | Expected |
+| Check | Status |
 | --- | --- |
-| n8n credential `EF Google Drive` | Connected, signed in as `info@evergladesliteracy.org` |
-| Cursor Google Drive MCP | Authenticated as `info@evergladesliteracy.org` |
-| Toolkit folder | Visible in Drive for that account; ID in `GOOGLE_DRIVE_FOLDER_ID` |
+| n8n Google Drive OAuth credential exists | **Already in n8n** — do not recreate |
+| Signed-in Google user | `info@evergladesliteracy.org` |
+| Credential name | `EF Google Drive` (rename the existing one if needed) |
+| Toolkit folder ID | Last segment of the Drive folder URL → `GOOGLE_DRIVE_FOLDER_ID` |

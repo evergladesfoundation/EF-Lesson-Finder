@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "n8n": {
+      "type": "streamable-http",
+      "url": "https://evergladesfoundation.app.n8n.cloud/mcp-server/http"
+    },
     "google-drive": {
       "url": "https://drivemcp.googleapis.com/mcp/v1"
     }
