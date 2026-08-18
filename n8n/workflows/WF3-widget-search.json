@@ -1,0 +1,120 @@
+{
+  "name": "Lesson Finder - WF3 Widget Search",
+  "id": "zrwSv91m3lyK8zOA",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "wf3-webhook",
+      "name": "Widget Search",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "lesson-finder-search",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lesson-finder-search",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      }
+    },
+    {
+      "id": "wf3-parse",
+      "name": "Parse Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst query = String(body.query || body.chatInput || body.text || '').trim();\n\nconst GRADE_WORDS = {\n  prek: -1, 'pre-k': -1, preschool: -1, kindergarten: 0, k: 0,\n  first: 1, '1st': 1, second: 2, '2nd': 2, third: 3, '3rd': 3,\n  fourth: 4, '4th': 4, fifth: 5, '5th': 5, sixth: 6, '6th': 6,\n  seventh: 7, '7th': 7, eighth: 8, '8th': 8,\n  ninth: 9, '9th': 9, tenth: 10, eleventh: 11, twelfth: 12,\n  'high school': 9, '9-12': 9\n};\n\nconst lower = query.toLowerCase();\nlet gradeSort = '';\nfor (const [word, g] of Object.entries(GRADE_WORDS)) {\n  if (lower.includes(word)) { gradeSort = String(g > 9 ? 9 : g); break; }\n}\nif (gradeSort === '') {\n  const ordinal = lower.match(/(\\d{1,2})(st|nd|rd|th)?[\\s-]*grade/) || lower.match(/\\bgrade[\\s-]*(\\d{1,2})\\b/);\n  if (ordinal) {\n    const n = parseInt(ordinal[1], 10);\n    gradeSort = String(n >= 9 ? 9 : n);\n  }\n}\n\nconst stdMatch = query.match(/\\b([A-Z]{2}(?:\\.\\d+){2,3}\\.\\d+|VPK-SC\\.\\d+)\\b/i);\nconst standard = stdMatch ? stdMatch[1].toUpperCase() : '';\n\nconst STOP = new Set(['the','and','about','find','a','an','lesson','lessons','show','me','what','which','does','align','with','cover','covers','for','who','how','that','this','from','into','near','is','are','to','of','on','in','grade','graders']);\nconst words = lower.replace(/[^a-z0-9\\s.-]/g, ' ').split(/\\s+/).filter(w => w.length > 2 && !STOP.has(w));\nconst topic = words.filter(w => !/^\\d+$/.test(w)).slice(0, 6).join(' ');\n\nreturn [{ json: { query, gradeSort, standard, topic } }];"
+      }
+    },
+    {
+      "id": "wf3-search",
+      "name": "Search Active Lessons",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  catalog.catalog_size,\n  l.lesson_id, l.grade_label, l.grade_sort, l.unit,\n  l.lesson_number, l.title,\n  COALESCE(l.summary, '') AS summary,\n  COALESCE(l.topic_tags, '') AS topic_tags,\n  COALESCE(l.concepts, '') AS concepts,\n  COALESCE(l.standards_raw, '') AS standards_raw,\n  l.lesson_url,\n  COALESCE(p.download_url, '') AS pdf_url\nFROM (SELECT count(*)::int AS catalog_size FROM lessons WHERE status = 'Active') catalog\nLEFT JOIN LATERAL (\n  SELECT *\n  FROM lessons\n  WHERE status = 'Active'\n    AND ($1 = '' OR grade_sort = NULLIF($1, '')::int)\n    AND (\n      $2 = ''\n      OR upper(COALESCE(standards_raw, '')) LIKE '%' || upper($2) || '%'\n    )\n    AND (\n      $3 = ''\n      OR title ILIKE '%' || $3 || '%'\n      OR COALESCE(topic_tags, '') ILIKE '%' || $3 || '%'\n      OR COALESCE(theme, '') ILIKE '%' || $3 || '%'\n      OR COALESCE(summary, '') ILIKE '%' || $3 || '%'\n      OR COALESCE(unit, '') ILIKE '%' || $3 || '%'\n    )\n  ORDER BY grade_sort NULLS LAST, lesson_number\n  LIMIT 5\n) l ON true\nLEFT JOIN LATERAL (\n  SELECT a.download_url FROM servable_assets a\n   WHERE a.lesson_id = l.lesson_id AND a.is_primary\n   LIMIT 1\n) p ON true;",
+        "options": {
+          "queryReplacement": "={{ $json.gradeSort }},{{ $json.standard }},{{ $json.topic }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "33pvAUPjxIblgtZI",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "wf3-shape",
+      "name": "Shape Widget Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst parsed = $('Parse Query').first().json;\nconst catalogSize = rows.length ? Number(rows[0].catalog_size || 0) : 0;\n\nconst lessons = rows.filter(r => r && r.lesson_id).map(r => {\n  const sort = r.grade_sort == null ? 0 : Number(r.grade_sort);\n  const gradeMax = sort === 9 ? 12 : sort;\n  const topics = String(r.topic_tags || '').split(/[,;|]/).map(s => s.trim()).filter(Boolean);\n  const standards = String(r.standards_raw || '').split(/[,;]/).map(s => s.trim()).filter(Boolean);\n  return {\n    id: r.lesson_id,\n    title: r.title,\n    gradeRange: r.grade_label || '',\n    gradeMin: sort,\n    gradeMax,\n    topics,\n    ngsssStandards: standards,\n    fundamentalConcept: r.concepts || '',\n    summary: r.summary || '',\n    lessonUrl: r.lesson_url || '',\n    pdfUrl: r.pdf_url || ''\n  };\n});\n\nlet text;\nif (!parsed.query) {\n  text = 'What would you like to find \u2014 a topic, grade level, or standard?';\n} else if (lessons.length === 0) {\n  text = \"I couldn't find a lesson matching that in the Teacher Toolkit. Try naming a topic, grade level, or NGSSS standard.\";\n} else {\n  const lead = lessons.length === 1 ? \"Here's a lesson\" : `Here are ${lessons.length} lessons`;\n  if (parsed.standard) text = `${lead} aligned with ${parsed.standard}:`;\n  else if (parsed.gradeSort !== '') {\n    const g = Number(parsed.gradeSort);\n    const label = g === -1 ? 'PreK' : g === 0 ? 'Kindergarten' : g === 9 ? 'grades 9-12' : `grade ${g}`;\n    text = `${lead} for ${label}:`;\n  } else text = `${lead} from the Teacher Toolkit:`;\n}\n\nreturn [{ json: {\n  text, lessons, source: 'n8n',\n  catalogHitCount: lessons.length,\n  catalogSize,\n  catalogReady: catalogSize > 0\n} }];"
+      }
+    }
+  ],
+  "connections": {
+    "Widget Search": {
+      "main": [
+        [
+          {
+            "node": "Parse Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Query": {
+      "main": [
+        [
+          {
+            "node": "Search Active Lessons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Active Lessons": {
+      "main": [
+        [
+          {
+            "node": "Shape Widget Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "pinData": {},
+  "meta": null,
+  "versionId": "0db0821a-4483-446b-aaa8-fc96b9e7c13e"
+}

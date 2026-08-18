@@ -1,1 +1,4 @@
 .wrangler/
+n8n/.env
+*.pem
+
