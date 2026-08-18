@@ -1,1 +1,5 @@
 .wrangler/
+.env
+.env.*
+!**/.env.example
+n8n/ACCOUNT.local.md
