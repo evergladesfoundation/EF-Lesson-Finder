@@ -59,8 +59,8 @@ A Drive 404 or empty list usually means n8n OAuth is a different Google user tha
 
 | Check | Status |
 | --- | --- |
-| n8n Google Drive OAuth | **Already in n8n** — do not recreate |
-| Signed-in Google user | `info@evergladesliteracy.org` (same as Edge `/u/2/`) |
-| Credential name | `EF Google Drive` |
+| n8n Google Drive OAuth | **Confirmed** — `info@evergladesliteracy.org`, name `EF Google Drive` |
+| `EF Postgres` / `EF OpenAI` | **Confirmed** |
 | Catalog | [My Drive](https://drive.google.com/drive/u/2/my-drive) — all files and nested folders from `root` |
 | Folder ID | **Not required** |
+| Next | Import **WF2**, then **WF1** (Drive Search `'root' in parents`, recurse, call WF2) |

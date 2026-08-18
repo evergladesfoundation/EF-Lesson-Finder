@@ -25,7 +25,10 @@ Do not put passwords or OAuth tokens in git. OAuth stays in the n8n UI.
 
 | Piece | Status |
 | --- | --- |
-| Google Drive OAuth in n8n | **Already created** — do not add another. Confirm the Google user is `info@evergladesliteracy.org`. Rename the credential to `EF Google Drive` if it has a different name. |
+| Google Drive OAuth | **Confirmed** — `info@evergladesliteracy.org`, credential `EF Google Drive` |
+| `EF Postgres` | **Confirmed** — Supabase port 5432, SSL Require |
+| `EF OpenAI` | **Confirmed** |
+| Drive catalog | My Drive for that account: [https://drive.google.com/drive/u/2/my-drive](https://drive.google.com/drive/u/2/my-drive) — crawl all files and folders from `root` |
 | Widget (Phase 1) | Local Vite app; `widget/src/data/lessons.ts` mock catalog |
 | Cloudflare worker | Serves `widget/dist` |
 
@@ -60,21 +63,11 @@ Children of a folder: same call with `q='FOLDER_ID' in parents and trashed=false
 
 Also include Shared with me only if those items are not already in My Drive (shortcuts). Primary corpus is My Drive.
 
-### 2. Finish the other n8n credentials
+### 2. Other n8n credentials — done
 
-Same **Credentials** sidebar. Create only if missing:
+`EF Google Drive`, `EF Postgres` (port **5432**, SSL Require), and `EF OpenAI` are in n8n. Create `EF Excel` / `EF Outlook` only when WF4 or mail nodes exist.
 
-| Name | What to attach |
-| --- | --- |
-| `EF Google Drive` | Existing Google credential (rename, do not duplicate) |
-| `EF Postgres` | Supabase **direct or session** URI, port **5432**, SSL **Require**. Not port `6543`. Password is the database password, not `anon` / `service_role`. |
-| `EF OpenAI` | API key with billing enabled |
-| `EF Excel` | Foundation Microsoft account; workbook must live in **OneDrive** |
-| `EF Outlook` | Same Microsoft account, if mail nodes exist |
-
-Scratch pad for IDs (gitignored): copy `n8n/.env.example` → `n8n/.env` from [PR #5](https://github.com/evergladesfoundation/EF-Lesson-Finder/pull/5).
-
-### 3. Import workflows (hard order)
+### 3. Import workflows (hard order) — **you are here**
 
 The four JSON exports are **not in this repo yet**. In n8n: open a workflow → **⋯ → Download**, save as `n8n/workflows/WF2*.json`, `WF1*.json`, `WF4*.json`, `WF3*.json`.
 
@@ -109,7 +102,7 @@ Search still uses mock data. `widget/src/search.ts` is written so you can later 
 
 | Check | Passes when |
 | --- | --- |
-| Google | Existing n8n credential; user is `info@evergladesliteracy.org` |
+| Google / Postgres / OpenAI | **Confirmed** in n8n |
 | Drive catalog | All files and nested folders in My Drive (`/u/2/my-drive`); WF1 starts at `root` |
 | Postgres | Port 5432 + SSL Require; `lessons` count &gt; 0 after WF1 |
 | WF1 → WF2 | Sub-workflow picked **From list** on this instance |
