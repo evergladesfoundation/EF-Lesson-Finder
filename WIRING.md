@@ -8,7 +8,7 @@ Phase 2 (not built yet) is meant to go:
 Google Drive My Drive  (info@evergladesliteracy.org)
         │  existing n8n Google Drive credential
         ▼
-n8n Cloud  WF1 (My Drive root + recurse all folders) → WF2 (extract / embed / upsert)
+n8n Cloud  WF1 (owned My Drive files, nested) → WF2 (extract / upsert)
         │
         ▼
 Supabase Postgres  (`lessons` table)
@@ -30,9 +30,9 @@ Do not put passwords or OAuth tokens in git. OAuth stays in the n8n UI.
 | Google Drive OAuth | **Confirmed** — `info@evergladesliteracy.org`, credential `EF Google Drive` |
 | `EF Postgres` | **Confirmed** — Supabase port 5432, SSL Require |
 | `EF OpenAI` | **Confirmed** |
-| Drive catalog | My Drive for that account: [https://drive.google.com/drive/u/2/my-drive](https://drive.google.com/drive/u/2/my-drive) — crawl all files and folders from `root` |
+| Drive catalog | My Drive for that account: [https://drive.google.com/drive/u/2/my-drive](https://drive.google.com/drive/u/2/my-drive) — all owned files, including nested folders |
 | Widget catalog | [PR #7](https://github.com/evergladesfoundation/EF-Lesson-Finder/pull/7) — 43 Active lessons; each `lessonUrl` is a Drive folder (not a My Drive root crawl) |
-| n8n WF1/WF2 JSON | **Not in git** — cannot diff. Live n8n API returned 401 without `X-N8N-API-KEY` |
+| n8n WF1/WF2 JSON | **In git** — `n8n/workflows/`. Live canvas still cannot be written from this agent (API 401 without `X-N8N-API-KEY`) |
 | Cloudflare worker | Serves `widget/dist` |
 
 ---
@@ -47,24 +47,23 @@ Catalog URL: [https://drive.google.com/drive/u/2/my-drive](https://drive.google.
 
 `/u/2/` is only which Google account is selected in the browser (the third signed-in profile). Confirm the avatar is **`info@evergladesliteracy.org`**. `/my-drive` is a view, like Shared with me — it is not an ID. Do not paste `my-drive` into a Folder ID field.
 
-WF1 starts at Drive **root** and recurses:
+WF1 uses Google Drive **Advanced Search** with **no Folder filter** (a Folder filter is not recursive):
 
-1. **List root** — Google Drive Search, Advanced Search, query `'root' in parents and trashed = false`, Return All on. Credential: existing `EF Google Drive`.
-2. **Split** — folders vs files.
-3. **Files** — send each to WF2.
-4. **Folders** — for each folder ID, Search `'FOLDER_ID' in parents and trashed = false`. Repeat until there are no nested folders.
+1. Query `trashed = false and 'me' in owners`, What to Search = Files, credential `EF Google Drive`.
+2. Keep PDFs and Google/Word Docs.
+3. Loop Over Items (batch size 1) and call WF2 once per file.
+
+First test keeps **Limit 25**. Turn on **Return All** only after `SELECT COUNT(*) FROM lessons;` looks right.
 
 If Search is empty, use HTTP Request with the same Google credential:
 
 ```
 GET https://www.googleapis.com/drive/v3/files
-  q='root' in parents and trashed=false
-  fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime)
+  q=trashed=false and 'me' in owners
+  fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime,webViewLink)
 ```
 
-Children of a folder: same call with `q='FOLDER_ID' in parents and trashed=false`.
-
-Also include Shared with me only if those items are not already in My Drive (shortcuts). Primary corpus is My Drive.
+Primary corpus is files owned by `info@evergladesliteracy.org`. Add Shared with me only if those items are not already owned by that mailbox.
 
 ### 2. Other n8n credentials — done
 
@@ -108,7 +107,7 @@ Search still uses the git catalog (PR #7 Master Index until Phase 2). `widget/sr
 | Check | Passes when |
 | --- | --- |
 | Google / Postgres / OpenAI | **Confirmed** in n8n |
-| Drive catalog | All files and nested folders in My Drive (`/u/2/my-drive`); WF1 starts at `root` |
+| Drive catalog | All owned files in My Drive (`/u/2/my-drive`); WF1 Advanced Search, no Folder filter |
 | Postgres | Port 5432 + SSL Require; `lessons` count &gt; 0 after WF1 |
 | WF1 → WF2 | Sub-workflow picked **From list** on this instance |
 | Chat | WF3 returns a real lesson before you activate it |

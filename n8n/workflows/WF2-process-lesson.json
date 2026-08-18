@@ -16,11 +16,14 @@
       "name": "Import notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-280, -280],
+      "position": [
+        -280,
+        -300
+      ],
       "parameters": {
-        "content": "## WF2 — one file → extract → upsert\n\nImport **before WF1**. Leave **inactive**.\n\n1. Credential on Download = **EF Google Drive** (`info@evergladesliteracy.org`).\n2. Credential on Postgres = **EF Postgres** (port 5432, SSL Require).\n3. Credential on OpenAI = **EF OpenAI**.\n4. Confirm `lessons` exists (see `n8n/schema.sql`).\n\nTrigger accepts all JSON from WF1 (`id`, `name`, `mimeType`, `webViewLink`, `modifiedTime`).",
-        "height": 360,
-        "width": 360,
+        "content": "## WF2 \u2014 one file \u2192 extract \u2192 upsert\n\nImport **before WF1**. Leave **inactive**.\n\n1. Download = **EF Google Drive** (`info@evergladesliteracy.org`).\n2. Postgres = **EF Postgres** (port 5432, SSL Require).\n3. OpenAI = **EF OpenAI**.\n4. Confirm `lessons` exists (`n8n/schema.sql`).\n\nTrigger accepts all JSON from WF1 (`id`, `name`, `mimeType`, `webViewLink`). Google Docs are converted to PDF on download.",
+        "height": 380,
+        "width": 380,
         "color": 7
       }
     },
@@ -29,7 +32,10 @@
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "parameters": {
         "inputSource": "passthrough"
       }
@@ -39,7 +45,10 @@
       "name": "Download file",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
-      "position": [260, 0],
+      "position": [
+        260,
+        0
+      ],
       "parameters": {
         "resource": "file",
         "operation": "download",
@@ -61,16 +70,21 @@
         "googleDriveOAuth2Api": {
           "name": "EF Google Drive"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "id": "wf2-extract",
       "name": "Extract from PDF",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
-      "position": [520, 0],
+      "position": [
+        520,
+        0
+      ],
       "parameters": {
         "operation": "pdf",
+        "binaryPropertyName": "data",
         "options": {}
       },
       "onError": "continueRegularOutput"
@@ -80,9 +94,12 @@
       "name": "Map lesson row",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [780, 0],
+      "position": [
+        780,
+        0
+      ],
       "parameters": {
-        "jsCode": "const file = $('Download file').item.json;\nconst extract = $input.first().json;\nconst text = String(extract.text || extract.data || '').replace(/\\s+/g, ' ').trim();\nconst name = String(file.name || 'Untitled');\nconst id = String(file.id || '');\nconst mime = String(file.mimeType || '');\nconst webView = file.webViewLink || ('https://drive.google.com/file/d/' + id + '/view');\nconst isPdf = mime.includes('pdf') || /\\.pdf$/i.test(name);\nconst hay = (name + ' ' + text.slice(0, 800)).toLowerCase();\n\nfunction grades() {\n  if (/pre[\\s-]?k|preschool/.test(hay)) return { grade_range: 'Pre-K', grade_min: -1, grade_max: -1 };\n  if (/kindergarten|\\bgrade k\\b/.test(hay)) return { grade_range: 'Kindergarten', grade_min: 0, grade_max: 0 };\n  const hs = hay.match(/grades?\\s*9\\s*[-–to]+\\s*12|\\b9-12\\b/);\n  if (hs) return { grade_range: 'Grades 9-12', grade_min: 9, grade_max: 12 };\n  const m = hay.match(/\\b(?:grade\\s*)?(\\d{1,2})\\b/);\n  if (m) {\n    const n = parseInt(m[1], 10);\n    if (n >= 1 && n <= 12) return { grade_range: 'Grade ' + n, grade_min: n, grade_max: n };\n  }\n  return { grade_range: 'Unknown', grade_min: 0, grade_max: 12 };\n}\n\nconst g = grades();\nconst standards = [...new Set((text.match(/\\b(?:SC|MAFS|LAFS|SS)\\.[A-Z0-9.]+/g) || []))];\n\nreturn [{\n  json: {\n    id,\n    title: name.replace(/\\.[Pp][Dd][Ff]$/, ''),\n    grade_range: g.grade_range,\n    grade_min: g.grade_min,\n    grade_max: g.grade_max,\n    topics: [],\n    ngsss_standards: standards,\n    fundamental_concept: '',\n    summary: (text || name).slice(0, 2000),\n    lesson_url: webView,\n    pdf_url: isPdf ? ('https://drive.google.com/uc?export=download&id=' + id) : '',\n    drive_file_id: id,\n    source_updated_at: file.modifiedTime || null,\n    extracted_text: text.slice(0, 12000),\n  },\n}];"
+        "jsCode": "const trigger = $('When Executed by Another Workflow').item.json;\nconst extract = $input.first().json;\nconst text = String(extract.text || extract.data || extract.content || '').replace(/\\s+/g, ' ').trim();\nconst name = String(trigger.name || trigger.title || 'Untitled');\nconst id = String(trigger.id || '');\nconst mime = String(trigger.mimeType || '');\nconst webView = trigger.webViewLink || ('https://drive.google.com/file/d/' + id + '/view');\nconst isPdf = mime.includes('pdf') || /\\.pdf$/i.test(name);\nconst hay = (name + ' ' + text.slice(0, 800)).toLowerCase();\n\nfunction grades() {\n  if (/pre[\\s-]?k|preschool/.test(hay)) return { grade_range: 'Pre-K', grade_min: -1, grade_max: -1 };\n  if (/kindergarten|\\bgrade k\\b|\\bgrade 0\\b/.test(hay)) return { grade_range: 'Kindergarten', grade_min: 0, grade_max: 0 };\n  const hs = hay.match(/grades?\\s*9\\s*[-\u2013to]+\\s*12|\\b9-12\\b/);\n  if (hs) return { grade_range: 'Grades 9-12', grade_min: 9, grade_max: 12 };\n  const range = hay.match(/grades?\\s*(\\d{1,2})\\s*[-\u2013to]+\\s*(\\d{1,2})/);\n  if (range) {\n    const a = parseInt(range[1], 10);\n    const b = parseInt(range[2], 10);\n    if (a >= 1 && a <= 12 && b >= 1 && b <= 12) {\n      const lo = Math.min(a, b);\n      const hi = Math.max(a, b);\n      return { grade_range: 'Grades ' + lo + '-' + hi, grade_min: lo, grade_max: hi };\n    }\n  }\n  const m = hay.match(/\\b(?:grade\\s*)(\\d{1,2})\\b/);\n  if (m) {\n    const n = parseInt(m[1], 10);\n    if (n >= 1 && n <= 12) return { grade_range: 'Grade ' + n, grade_min: n, grade_max: n };\n  }\n  return { grade_range: 'Unknown', grade_min: 0, grade_max: 12 };\n}\n\nconst g = grades();\nconst standards = [...new Set((text.match(/\\b(?:SC|MAFS|LAFS|SS)\\.[A-Z0-9.]+/g) || []))];\n\nreturn [{\n  json: {\n    id,\n    title: name.replace(/\\.[Pp][Dd][Ff]$/, '').replace(/\\.[Dd][Oo][Cc][Xx]?$/, ''),\n    grade_range: g.grade_range,\n    grade_min: g.grade_min,\n    grade_max: g.grade_max,\n    topics: [],\n    ngsss_standards: standards,\n    fundamental_concept: '',\n    summary: (text || name).slice(0, 2000),\n    lesson_url: webView,\n    pdf_url: isPdf ? ('https://drive.google.com/uc?export=download&id=' + id) : '',\n    drive_file_id: id,\n    source_updated_at: trigger.modifiedTime || '',\n    extracted_text: text.slice(0, 12000),\n  },\n}];\n"
       }
     },
     {
@@ -90,17 +107,28 @@
       "name": "Enrich with OpenAI",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [1040, 0],
+      "position": [
+        1040,
+        0
+      ],
       "parameters": {
+        "resource": "text",
+        "operation": "message",
         "modelId": {
           "__rl": true,
           "mode": "id",
           "value": "gpt-4o-mini"
         },
+        "jsonOutput": true,
         "messages": {
           "values": [
             {
-              "content": "=You extract Everglades Literacy lesson metadata. Reply with JSON only (no markdown) using keys: summary (string), topics (string array), ngsss_standards (string array of codes like SC.2.L.17.2), fundamental_concept (string), grade_min (integer, PreK=-1, K=0), grade_max (integer), grade_range (string).\n\nTitle: {{ $json.title }}\nExisting codes: {{ JSON.stringify($json.ngsss_standards) }}\nText:\n{{ $json.extracted_text }}"
+              "role": "system",
+              "content": "You extract Everglades Literacy lesson metadata. Reply with JSON only using keys: summary (string), topics (string array), ngsss_standards (string array of codes like SC.2.L.17.2), fundamental_concept (string), grade_min (integer, PreK=-1, K=0), grade_max (integer), grade_range (string)."
+            },
+            {
+              "role": "user",
+              "content": "=Title: {{ $json.title }}\nExisting codes: {{ JSON.stringify($json.ngsss_standards) }}\nText:\n{{ $json.extracted_text }}"
             }
           ]
         },
@@ -118,9 +146,12 @@
       "name": "Merge OpenAI fields",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1300, 0],
+      "position": [
+        1300,
+        0
+      ],
       "parameters": {
-        "jsCode": "const row = $('Map lesson row').item.json;\nconst aiRaw = $input.first().json;\nlet parsed = {};\ntry {\n  const content = aiRaw.message?.content || aiRaw.text || aiRaw.content || (typeof aiRaw.output === 'string' ? aiRaw.output : '');\n  const blob = typeof content === 'string' ? content : JSON.stringify(aiRaw);\n  const start = blob.indexOf('{');\n  const end = blob.lastIndexOf('}');\n  if (start >= 0 && end > start) parsed = JSON.parse(blob.slice(start, end + 1));\n} catch (e) {\n  parsed = {};\n}\n\nfunction num(v, fallback) {\n  const n = Number(v);\n  return Number.isFinite(n) ? n : fallback;\n}\n\nconst topics = Array.isArray(parsed.topics) ? parsed.topics.map(String) : row.topics;\nconst standards = Array.isArray(parsed.ngsss_standards) && parsed.ngsss_standards.length\n  ? parsed.ngsss_standards.map(String)\n  : row.ngsss_standards;\n\nreturn [{\n  json: {\n    ...row,\n    summary: parsed.summary || row.summary,\n    topics,\n    ngsss_standards: standards,\n    fundamental_concept: parsed.fundamental_concept || row.fundamental_concept,\n    grade_min: num(parsed.grade_min, row.grade_min),\n    grade_max: num(parsed.grade_max, row.grade_max),\n    grade_range: parsed.grade_range || row.grade_range,\n  },\n}];"
+        "jsCode": "const row = $('Map lesson row').item.json;\nconst aiRaw = $input.first().json || {};\n\nfunction pickParsed(raw) {\n  if (raw && (typeof raw.summary === 'string' || Array.isArray(raw.topics) || Array.isArray(raw.ngsss_standards))) {\n    return raw;\n  }\n  const content = raw.message?.content || raw.text || raw.content || (typeof raw.output === 'string' ? raw.output : '');\n  const blob = typeof content === 'string' ? content : JSON.stringify(raw);\n  const start = blob.indexOf('{');\n  const end = blob.lastIndexOf('}');\n  if (start >= 0 && end > start) {\n    try { return JSON.parse(blob.slice(start, end + 1)); } catch (e) { return {}; }\n  }\n  return {};\n}\n\nfunction num(v, fallback) {\n  const n = Number(v);\n  return Number.isFinite(n) ? n : fallback;\n}\n\nfunction pgTextArray(arr) {\n  const items = (Array.isArray(arr) ? arr : [])\n    .map((s) => String(s).trim())\n    .filter(Boolean)\n    .map((s) => '\"' + s.replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"') + '\"');\n  return '{' + items.join(',') + '}';\n}\n\nconst parsed = pickParsed(aiRaw);\nconst topics = Array.isArray(parsed.topics) ? parsed.topics.map(String) : row.topics;\nconst standards = Array.isArray(parsed.ngsss_standards) && parsed.ngsss_standards.length\n  ? parsed.ngsss_standards.map(String)\n  : row.ngsss_standards;\n\nconst grade_min = num(parsed.grade_min, row.grade_min);\nconst grade_max = num(parsed.grade_max, row.grade_max);\n\nreturn [{\n  json: {\n    id: row.id,\n    title: row.title,\n    grade_range: parsed.grade_range || row.grade_range,\n    grade_min,\n    grade_max: grade_max < grade_min ? grade_min : grade_max,\n    topics_pg: pgTextArray(topics),\n    standards_pg: pgTextArray(standards),\n    fundamental_concept: parsed.fundamental_concept || row.fundamental_concept || '',\n    summary: parsed.summary || row.summary || '',\n    lesson_url: row.lesson_url,\n    pdf_url: row.pdf_url,\n    drive_file_id: row.drive_file_id,\n    source_updated_at: row.source_updated_at || '',\n  },\n}];\n"
       }
     },
     {
@@ -128,13 +159,16 @@
       "name": "Upsert lesson",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1560, 0],
+      "position": [
+        1560,
+        0
+      ],
       "parameters": {
         "resource": "database",
         "operation": "executeQuery",
-        "query": "INSERT INTO lessons (\n  id, title, grade_range, grade_min, grade_max, topics, ngsss_standards,\n  fundamental_concept, summary, lesson_url, pdf_url, drive_file_id,\n  source_updated_at, indexed_at\n) VALUES (\n  $1, $2, $3, $4, $5, $6::text[], $7::text[],\n  $8, $9, $10, $11, $12,\n  $13::timestamptz, now()\n)\nON CONFLICT (id) DO UPDATE SET\n  title = EXCLUDED.title,\n  grade_range = EXCLUDED.grade_range,\n  grade_min = EXCLUDED.grade_min,\n  grade_max = EXCLUDED.grade_max,\n  topics = EXCLUDED.topics,\n  ngsss_standards = EXCLUDED.ngsss_standards,\n  fundamental_concept = EXCLUDED.fundamental_concept,\n  summary = EXCLUDED.summary,\n  lesson_url = EXCLUDED.lesson_url,\n  pdf_url = EXCLUDED.pdf_url,\n  drive_file_id = EXCLUDED.drive_file_id,\n  source_updated_at = EXCLUDED.source_updated_at,\n  indexed_at = now();",
+        "query": "INSERT INTO lessons (\n  id, title, grade_range, grade_min, grade_max, topics, ngsss_standards,\n  fundamental_concept, summary, lesson_url, pdf_url, drive_file_id,\n  source_updated_at, indexed_at\n) VALUES (\n  $1, $2, $3, $4, $5, $6::text[], $7::text[],\n  $8, $9, $10, $11, $12,\n  NULLIF($13, '')::timestamptz, now()\n)\nON CONFLICT (id) DO UPDATE SET\n  title = EXCLUDED.title,\n  grade_range = EXCLUDED.grade_range,\n  grade_min = EXCLUDED.grade_min,\n  grade_max = EXCLUDED.grade_max,\n  topics = EXCLUDED.topics,\n  ngsss_standards = EXCLUDED.ngsss_standards,\n  fundamental_concept = EXCLUDED.fundamental_concept,\n  summary = EXCLUDED.summary,\n  lesson_url = EXCLUDED.lesson_url,\n  pdf_url = EXCLUDED.pdf_url,\n  drive_file_id = EXCLUDED.drive_file_id,\n  source_updated_at = EXCLUDED.source_updated_at,\n  indexed_at = now();",
         "options": {
-          "queryReplacement": "={{ [$json.id, $json.title, $json.grade_range, $json.grade_min, $json.grade_max, $json.topics, $json.ngsss_standards, $json.fundamental_concept, $json.summary, $json.lesson_url, $json.pdf_url, $json.drive_file_id, $json.source_updated_at] }}"
+          "queryReplacement": "={{ [$json.id, $json.title, $json.grade_range, $json.grade_min, $json.grade_max, $json.topics_pg, $json.standards_pg, $json.fundamental_concept, $json.summary, $json.lesson_url, $json.pdf_url, $json.drive_file_id, $json.source_updated_at] }}"
         }
       },
       "credentials": {
@@ -146,22 +180,70 @@
   ],
   "connections": {
     "When Executed by Another Workflow": {
-      "main": [[{ "node": "Download file", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Download file": {
-      "main": [[{ "node": "Extract from PDF", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Extract from PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract from PDF": {
-      "main": [[{ "node": "Map lesson row", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Map lesson row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Map lesson row": {
-      "main": [[{ "node": "Enrich with OpenAI", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Enrich with OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Enrich with OpenAI": {
-      "main": [[{ "node": "Merge OpenAI fields", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Merge OpenAI fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Merge OpenAI fields": {
-      "main": [[{ "node": "Upsert lesson", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Upsert lesson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

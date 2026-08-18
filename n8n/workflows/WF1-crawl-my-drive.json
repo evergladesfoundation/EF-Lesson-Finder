@@ -15,11 +15,14 @@
       "name": "Import notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-320, -320],
+      "position": [
+        -360,
+        -360
+      ],
       "parameters": {
-        "content": "## WF1 — crawl My Drive, call WF2\n\nImport **after WF2**. Leave **inactive** until a test run is green.\n\n1. Credential = **EF Google Drive** (`info@evergladesliteracy.org`).\n2. Open **Call WF2** → Workflow **From list** → **WF2 - Process one Drive lesson file** (the imported JSON still has a placeholder ID).\n3. First test: keep **Limit = 25**. After `SELECT COUNT(*) FROM lessons;` looks right, enable **Return All** on List My Drive files.\n\nCatalog: My Drive (`/u/2/my-drive`). Search uses the user corpus (all nested files), then keeps PDFs and Docs only.",
-        "height": 420,
-        "width": 400,
+        "content": "## WF1 \u2014 crawl My Drive, call WF2\n\nImport **after WF2**. Leave **inactive** until a test run is green.\n\n1. Credential = **EF Google Drive** (`info@evergladesliteracy.org`).\n2. Open **Call WF2** \u2192 Workflow **From list** \u2192 **WF2 - Process one Drive lesson file** (JSON still has a placeholder ID).\n3. First test: keep **Limit = 25**. After `SELECT COUNT(*) FROM lessons;` looks right, enable **Return All** on List My Drive files.\n\nSearch uses Advanced Search `trashed = false and 'me' in owners` with **no Folder filter**, so nested My Drive files are included. Then keep PDFs and Docs only. Loop Over Items calls WF2 once per file.",
+        "height": 460,
+        "width": 420,
         "color": 4
       }
     },
@@ -28,7 +31,10 @@
       "name": "When clicking Test workflow",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "parameters": {}
     },
     {
@@ -36,12 +42,15 @@
       "name": "List My Drive files",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
-      "position": [260, 0],
+      "position": [
+        240,
+        0
+      ],
       "parameters": {
         "resource": "fileFolder",
         "operation": "search",
         "searchMethod": "query",
-        "queryString": "trashed = false",
+        "queryString": "trashed = false and 'me' in owners",
         "returnAll": false,
         "limit": 25,
         "filter": {
@@ -68,9 +77,26 @@
       "name": "Keep PDFs and Docs",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [520, 0],
+      "position": [
+        500,
+        0
+      ],
       "parameters": {
-        "jsCode": "const items = $input.all();\nreturn items.filter(({ json }) => {\n  const mime = String(json.mimeType || '').toLowerCase();\n  const name = String(json.name || '').toLowerCase();\n  return (\n    mime.includes('pdf') ||\n    mime.includes('document') ||\n    mime.includes('msword') ||\n    mime.includes('wordprocessingml') ||\n    name.endsWith('.pdf') ||\n    name.endsWith('.doc') ||\n    name.endsWith('.docx')\n  );\n});"
+        "jsCode": "const items = $input.all();\nreturn items.filter(({ json }) => {\n  const mime = String(json.mimeType || '').toLowerCase();\n  const name = String(json.name || '').toLowerCase();\n  if (mime.includes('folder') || mime.includes('shortcut')) return false;\n  return (\n    mime.includes('pdf') ||\n    mime.includes('document') ||\n    mime.includes('msword') ||\n    mime.includes('wordprocessingml') ||\n    name.endsWith('.pdf') ||\n    name.endsWith('.doc') ||\n    name.endsWith('.docx')\n  );\n});\n"
+      }
+    },
+    {
+      "id": "wf1-loop",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        760,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
       }
     },
     {
@@ -78,7 +104,10 @@
       "name": "Call WF2",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
-      "position": [780, 0],
+      "position": [
+        1020,
+        120
+      ],
       "parameters": {
         "source": "database",
         "workflowId": {
@@ -86,20 +115,85 @@
           "mode": "id",
           "value": "REPLACE_WITH_WF2_ID"
         },
-        "mode": "each",
+        "mode": "once",
         "options": {}
-      }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wf1-done",
+      "name": "Crawl finished",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        -80
+      ],
+      "parameters": {}
     }
   ],
   "connections": {
     "When clicking Test workflow": {
-      "main": [[{ "node": "List My Drive files", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "List My Drive files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "List My Drive files": {
-      "main": [[{ "node": "Keep PDFs and Docs", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Keep PDFs and Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Keep PDFs and Docs": {
-      "main": [[{ "node": "Call WF2", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Crawl finished",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call WF2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call WF2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

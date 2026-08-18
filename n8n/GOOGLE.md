@@ -17,23 +17,27 @@ Catalog (browser): [https://drive.google.com/drive/u/2/my-drive](https://drive.g
 - `/u/2/` is the **third** Google account signed into Edge. Click the avatar and confirm it is `info@evergladesliteracy.org`.
 - `/my-drive` is a **view**, not a folder ID. Do not paste `my-drive` into a Folder ID field.
 
-**You do not need a folder ID.** WF1 crawls My Drive from **root** and every nested folder.
+**You do not need a folder ID.** WF1 searches all files the mailbox owns, including nested folders.
 
-### n8n WF1 — list root, then recurse
+### n8n WF1 — Advanced Search (no Folder filter)
 
-1. Search: `'root' in parents and trashed = false`, Return All on, credential `EF Google Drive`.
-2. Files → WF2. Folders → list children with `'FOLDER_ID' in parents and trashed = false`.
-3. Repeat for nested folders.
+Drive Search with a Folder filter only returns **direct children** of that folder. To include nested files, leave Folder empty.
 
-If Search is empty, use HTTP Request with the same credential:
+Imported JSON (`n8n/workflows/WF1-crawl-my-drive.json`) uses:
+
+- Search method: **Advanced Search**
+- Query: `trashed = false and 'me' in owners`
+- What to Search: **Files**
+- Credential: `EF Google Drive`
+- Limit 25 until the first run is green, then **Return All**
+
+If Search is empty, confirm the OAuth user is `info@evergladesliteracy.org`. Fallback HTTP Request with the same credential:
 
 ```
 GET https://www.googleapis.com/drive/v3/files
-  q='root' in parents and trashed=false
-  fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime)
+  q=trashed=false and 'me' in owners
+  fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime,webViewLink)
 ```
-
-Children: same URL with `q='FOLDER_ID' in parents and trashed=false`.
 
 ---
 
@@ -61,6 +65,6 @@ A Drive 404 or empty list usually means n8n OAuth is a different Google user tha
 | --- | --- |
 | n8n Google Drive OAuth | **Confirmed** — `info@evergladesliteracy.org`, name `EF Google Drive` |
 | `EF Postgres` / `EF OpenAI` | **Confirmed** |
-| Catalog | [My Drive](https://drive.google.com/drive/u/2/my-drive) — all files and nested folders from `root` |
+| Catalog | [My Drive](https://drive.google.com/drive/u/2/my-drive) — owned files, including nested folders |
 | Folder ID | **Not required** |
 | Next | Import `n8n/workflows/WF2-process-lesson.json`, then `WF1-crawl-my-drive.json`. Re-point Call WF2 From list. |
