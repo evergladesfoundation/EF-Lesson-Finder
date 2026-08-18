@@ -33,38 +33,33 @@ Do not put passwords or OAuth tokens in git. OAuth stays in the n8n UI.
 
 ## Wire it (in this order)
 
-### 1. Point n8n at Shared with me
+### 1. Crawl every file and folder Shared with me
 
-The lesson plans are **not** in My Drive. They appear for `info@evergladesliteracy.org` at:
+**Plan:** index **all** files and folders visible to `info@evergladesliteracy.org`, not one Toolkit folder ID. You do not need a folder ID.
 
-[https://drive.google.com/drive/shared-with-me](https://drive.google.com/drive/shared-with-me)
+They appear in Drive at [Shared with me](https://drive.google.com/drive/shared-with-me). That URL is a view, not an ID.
 
-That URL is a **view**, not a folder ID. WF1 must not use a My Drive folder picker. Use one of these:
+`sharedWithMe = true` only returns **top-level** shares. Files inside those folders are not in that list. WF1 must recurse:
 
-**A. Crawl everything shared with that account (default)**
+1. **List roots** — Google Drive Search, Advanced Search, query `sharedWithMe = true and trashed = false`, Return All on. Credential: existing `EF Google Drive`.
+2. **Split** — folders vs files.
+3. **Files** — send each to WF2.
+4. **Folders** — for each folder ID, Search with `'FOLDER_ID' in parents and trashed = false`, plus `includeItemsFromAllDrives=true` and `supportsAllDrives=true` (HTTP Request node if the Drive node omits those flags). Repeat until there are no nested folders.
 
-On the WF1 Google Drive node:
+If Search 404s or is empty, use HTTP Request with the same Google credential:
 
-- Resource: **File/Folder**
-- Operation: **Search**
-- Search Method: **Advanced Search**
-- Query String: `sharedWithMe = true and trashed = false`
-- Return All: on
+```
+GET https://www.googleapis.com/drive/v3/files
+  q=sharedWithMe=true and trashed=false
+  includeItemsFromAllDrives=true
+  supportsAllDrives=true
+  corpora=allDrives
+  fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime)
+```
 
-If the node 404s or returns nothing, use an **HTTP Request** node with the same Google credential:
+Children of a folder: same call with `q='FOLDER_ID' in parents and trashed=false`.
 
-`GET https://www.googleapis.com/drive/v3/files?q=sharedWithMe=true and trashed=false&includeItemsFromAllDrives=true&supportsAllDrives=true&fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime)`
-
-**B. Crawl one shared folder (preferred if all plans sit in a single folder)**
-
-Get the ID:
-
-1. Sign in as `info@evergladesliteracy.org`.
-2. Open [Shared with me](https://drive.google.com/drive/shared-with-me).
-3. Double-click the lesson-plans **folder**.
-4. Copy the last segment of `https://drive.google.com/drive/folders/<id>`.
-
-That `<id>` is `GOOGLE_DRIVE_FOLDER_ID`. Paste it on the Drive node (By ID or By URL). If the bar still says `shared-with-me`, you have not opened a folder. Do not use a `/file/d/...` URL (that is a file, not a folder).
+If Shared with me is empty, the **owner** has not shared items with `info@evergladesliteracy.org`. Share the parent folders (or a Shared drive) with that address as Viewer; do not share file-by-file if the plan is “everything.”
 
 ### 2. Finish the other n8n credentials
 
@@ -87,7 +82,7 @@ The four JSON exports are **not in this repo yet**. In n8n: open a workflow → 
 Then in n8n: **⋯ → Import from File**:
 
 1. **WF2** first (per-file processor). Assign credentials. Save. Copy its ID from the URL.
-2. **WF1**. Assign `EF Google Drive` + `EF Postgres` (+ OpenAI if on the canvas). Open **Execute Sub-workflow** → **From list → WF2** (the old ID from another instance will fail). Point the Drive node at **Shared with me** (`sharedWithMe = true`) or at the shared folder ID from step 1. Save. Leave **inactive**.
+2. **WF1**. Assign `EF Google Drive` + `EF Postgres` (+ OpenAI if on the canvas). Open **Execute Sub-workflow** → **From list → WF2**. Drive crawl = all Shared with me files **and** recurse into folders (step 1). No folder ID. Save. Leave **inactive**.
 3. **WF4** (Excel). Pick the workbook From list or paste the Graph item ID.
 4. **Execute WF1 once** (Test workflow). Confirm `SELECT COUNT(*) FROM lessons;` in Supabase.
 5. **WF3** last (chatbot). Do not activate until `lessons` has rows.
@@ -116,7 +111,7 @@ Search still uses mock data. `widget/src/search.ts` is written so you can later 
 | Check | Passes when |
 | --- | --- |
 | Google | Existing n8n credential; user is `info@evergladesliteracy.org` |
-| Drive catalog | Shared with me for `info@evergladesliteracy.org`; WF1 uses `sharedWithMe = true` or a real `/folders/<id>` URL |
+| Drive catalog | All files and nested folders in Shared with me; WF1 recurses (not a single folder ID) |
 | Postgres | Port 5432 + SSL Require; `lessons` count &gt; 0 after WF1 |
 | WF1 → WF2 | Sub-workflow picked **From list** on this instance |
 | Chat | WF3 returns a real lesson before you activate it |

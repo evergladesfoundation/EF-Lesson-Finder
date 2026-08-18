@@ -10,58 +10,36 @@ Instance: [evergladesfoundation.app.n8n.cloud](https://evergladesfoundation.app.
 
 ---
 
-## Lesson plans location
+## Plan: every file and folder in Shared with me
 
-The Teacher Toolkit is in **Shared with me** for that account:
+The Teacher Toolkit is everything that account can see under:
 
 [https://drive.google.com/drive/shared-with-me](https://drive.google.com/drive/shared-with-me)
 
-That URL is a Drive **view**, not a folder ID. Do not paste `shared-with-me` into a Folder ID field.
+**You do not need a folder ID.** Do not paste `shared-with-me` into a Folder ID field.
 
-### n8n WF1 — search Shared with me
+If Shared with me is empty, the owner must **share** the parent folders (or a Shared drive) with `info@evergladesliteracy.org` as Viewer. Sharing the parent once is enough; do not share each file.
 
-Google Drive node:
+### n8n WF1 — list, then recurse
 
-| Field | Value |
-| --- | --- |
-| Credential | existing Google Drive OAuth (`EF Google Drive`) |
-| Resource | File/Folder |
-| Operation | Search |
-| Search Method | Advanced Search |
-| Query String | `sharedWithMe = true and trashed = false` |
-| Return All | on |
+`sharedWithMe = true` returns only **top-level** shares. Nested files are missing until you walk folders.
 
-If Search returns nothing or 404s, use HTTP Request with the same credential:
+1. Search: `sharedWithMe = true and trashed = false`, Return All on, credential `EF Google Drive`.
+2. Files → WF2. Folders → list children with `'FOLDER_ID' in parents and trashed = false`.
+3. Repeat for nested folders.
+
+Always send `includeItemsFromAllDrives=true` and `supportsAllDrives=true`. If the Google Drive node cannot set those, use HTTP Request with the same credential:
 
 ```
 GET https://www.googleapis.com/drive/v3/files
   q=sharedWithMe=true and trashed=false
   includeItemsFromAllDrives=true
   supportsAllDrives=true
+  corpora=allDrives
   fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime)
 ```
 
-### How to get the folder ID
-
-`shared-with-me` has no ID. You only get an ID after you open a **folder**.
-
-1. Sign in to Drive as **`info@evergladesliteracy.org`**.
-2. Open [Shared with me](https://drive.google.com/drive/shared-with-me).
-3. **Double-click the lesson-plans folder** (the folder icon, not a PDF or Doc).
-4. Look at the address bar. It should look like:
-
-   `https://drive.google.com/drive/folders/1AbCDefGhijKLmNopqRSTuv`
-
-   The folder ID is the last segment: `1AbCDefGhijKLmNopqRSTuv`
-
-5. If the URL is still `/drive/shared-with-me`, you have not opened a folder yet — go back and click into the folder.
-
-**Other ways (same ID):**
-
-- Right-click the folder → **Share** → **Copy link**. The link is `https://drive.google.com/drive/folders/<id>?usp=share_link` — use the part between `/folders/` and `?`.
-- In n8n, Google Drive node → Folder → **From list** or **By URL** and paste that same link. n8n stores the ID; you do not have to type it.
-
-Do not use a **file** URL (`/file/d/<id>/view`) — that is a file ID and WF1 will 404 if it expects a folder.
+Children: same URL with `q='FOLDER_ID' in parents and trashed=false`.
 
 ---
 
@@ -73,7 +51,7 @@ Do not use a **file** URL (`/file/d/<id>/view`) — that is a file ID and WF1 wi
 4. Confirm the signed-in Google user is **`info@evergladesliteracy.org`**. If it is a different account, **Sign in with Google** on *this same credential* and switch — do not add a duplicate.
 5. Leave authentication as **Managed OAuth2**.
 
-A Drive 404 after import usually means the node used a My Drive folder ID, or the signed-in account cannot see the shared items.
+A Drive 404 or empty list usually means the node searched My Drive, skipped `supportsAllDrives`, or the owner has not shared the folders with this mailbox.
 
 ---
 
@@ -90,4 +68,5 @@ A Drive 404 after import usually means the node used a My Drive folder ID, or th
 | n8n Google Drive OAuth | **Already in n8n** — do not recreate |
 | Signed-in Google user | `info@evergladesliteracy.org` |
 | Credential name | `EF Google Drive` |
-| Catalog | [Shared with me](https://drive.google.com/drive/shared-with-me) → `sharedWithMe = true` |
+| Catalog | All Shared with me files **and** nested folders (recurse) |
+| Folder ID | **Not required** |
