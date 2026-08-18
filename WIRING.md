@@ -1,6 +1,8 @@
 # How to wire Everglades Lesson Finder
 
-The widget you can run today searches **mock lessons in git**. Production search is meant to go:
+The widget you can run today searches a **static catalog in git** (Master Lesson Index — [PR #7](https://github.com/evergladesfoundation/EF-Lesson-Finder/pull/7)). n8n live sync is Phase 2 and is **not** required for those Drive folder/PDF links.
+
+Phase 2 (not built yet) is meant to go:
 
 ```
 Google Drive My Drive  (info@evergladesliteracy.org)
@@ -29,7 +31,8 @@ Do not put passwords or OAuth tokens in git. OAuth stays in the n8n UI.
 | `EF Postgres` | **Confirmed** — Supabase port 5432, SSL Require |
 | `EF OpenAI` | **Confirmed** |
 | Drive catalog | My Drive for that account: [https://drive.google.com/drive/u/2/my-drive](https://drive.google.com/drive/u/2/my-drive) — crawl all files and folders from `root` |
-| Widget (Phase 1) | Local Vite app; `widget/src/data/lessons.ts` mock catalog |
+| Widget catalog | [PR #7](https://github.com/evergladesfoundation/EF-Lesson-Finder/pull/7) — 43 Active lessons; each `lessonUrl` is a Drive folder (not a My Drive root crawl) |
+| n8n WF1/WF2 JSON | **Not in git** — cannot diff. Live n8n API returned 401 without `X-N8N-API-KEY` |
 | Cloudflare worker | Serves `widget/dist` |
 
 ---
