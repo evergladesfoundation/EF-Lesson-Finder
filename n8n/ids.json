@@ -1,0 +1,9 @@
+{
+  "instance": "https://evergladesfoundation.app.n8n.cloud",
+  "wf1": "FDM2q7QnvtRCmgu4",
+  "wf2": "uht4O5B19PaCoC21",
+  "wf3": "zrwSv91m3lyK8zOA",
+  "wf4": "3QmJRbonPXRwQgse",
+  "searchWebhook": "https://evergladesfoundation.app.n8n.cloud/webhook/lesson-finder-search",
+  "chatWebhook": "https://evergladesfoundation.app.n8n.cloud/webhook/everglades-lesson-finder"
+}

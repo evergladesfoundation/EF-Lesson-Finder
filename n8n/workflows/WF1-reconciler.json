@@ -1,0 +1,686 @@
+{
+  "name": "Lesson Finder - WF1 Reconciler",
+  "id": "FDM2q7QnvtRCmgu4",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "8b7fc8e2-aa80-441e-bed6-fecb76b6f6e2",
+      "name": "Nightly 2am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b56fa070-ece3-4a57-92e5-6d49f17ced62",
+      "name": "Curriculum Root",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "root",
+              "name": "folderId",
+              "value": "1iT1_e65k_2yzXPpa-mMMt-yf-ajJpwCH",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "524952dc-954b-4ecb-bf83-2d59e73e98dd",
+      "name": "Mark Crawl Start",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        336,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE lessons SET seen_this_run = false;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "33pvAUPjxIblgtZI",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "c7fd5ff3-3483-43ad-8af5-0baa6e94e3c8",
+      "name": "List Grade Folders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "='{{ $('Curriculum Root').item.json.folderId }}' in parents and trashed = false"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name,mimeType,shortcutDetails)"
+            },
+            {
+              "name": "pageSize",
+              "value": "1000"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            },
+            {
+              "name": "includeItemsFromAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "SUPjCEhHQiGVch8A",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "ad58e691-5958-452b-848c-c8e39aaef23f",
+      "name": "Identify Grades and Units",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Level 1: children of the curriculum root.\n// Keep grade folders and the four 9-12 units. Resolve the Pre-K shortcut.\n// Everything else (Book Readings, Mischief in the Mangroves, loose files)\n// is deliberately excluded - it is not part of the core 44.\n\nconst files = $input.first().json.files || [];\nconst out = [];\n\nconst GRADE = [\n  { re: /^kindergarten$/i,      label: 'Kindergarten', sort: 0 },\n  { re: /^1st\\s*grade$/i,       label: 'First',        sort: 1 },\n  { re: /^2nd\\s*grade$/i,       label: 'Second',       sort: 2 },\n  { re: /^3rd\\s*grade$/i,       label: 'Third',        sort: 3 },\n  { re: /^4th\\s*grade$/i,       label: 'Fourth',       sort: 4 },\n  { re: /^5th\\s*grade$/i,       label: 'Fifth',        sort: 5 },\n  { re: /^6th\\s*grade$/i,       label: 'Sixth',        sort: 6 },\n  { re: /^7th\\s*grade$/i,       label: 'Seventh',      sort: 7 },\n  { re: /^8th\\s*grade$/i,       label: 'Eighth',       sort: 8 },\n];\n\n// Lesson ID prefix per grade, so IDs stay stable across runs.\nconst PREFIX = { '-1': 'PK', '0': 'K', '1': '1', '2': '2', '3': '3',\n                 '4': '4', '5': '5', '6': '6', '7': '7', '8': '8' };\n\nconst UNIT_ABBR = {\n  'Our Watershed': 'OW',\n  'Amazing Adaptations': 'AA',\n  'Everglades Restoration': 'ER',\n  'Water Use and Society': 'WU'\n};\n\nfor (const f of files) {\n  const name = (f.name || '').trim();\n\n  // Pre-K arrives as a shortcut to \"Everglades PreK Curriculum\".\n  if (f.mimeType === 'application/vnd.google-apps.shortcut' && /^prek$/i.test(name)) {\n    const target = f.shortcutDetails && f.shortcutDetails.targetId;\n    if (target) {\n      out.push({ json: { folderId: target, gradeLabel: 'Pre-K', gradeSort: -1,\n                         idPrefix: 'PK', unit: null } });\n    }\n    continue;\n  }\n\n  if (f.mimeType !== 'application/vnd.google-apps.folder') continue;\n\n  const g = GRADE.find(g => g.re.test(name));\n  if (g) {\n    out.push({ json: { folderId: f.id, gradeLabel: g.label, gradeSort: g.sort,\n                       idPrefix: PREFIX[String(g.sort)], unit: null } });\n    continue;\n  }\n\n  // 9-12 units are named \"9-12 <Unit Name>\"\n  const hs = name.match(/^9-12\\s+(.*)$/i);\n  if (hs) {\n    const unit = hs[1].trim();\n    const abbr = UNIT_ABBR[unit] || unit.split(/\\s+/).map(w => w[0]).join('').toUpperCase();\n    out.push({ json: { folderId: f.id, gradeLabel: '9-12', gradeSort: 9,\n                       idPrefix: 'HS.' + abbr, unit } });\n    continue;\n  }\n\n  // Anything else is a supplemental folder. Logged, not crawled.\n  // To include the Water Quality unit, add a rule for it here.\n}\n\nif (out.length === 0) {\n  throw new Error('No grade folders found under the curriculum root. Check the root folder ID and Drive permissions.');\n}\n\nreturn out;"
+      }
+    },
+    {
+      "id": "6faf6ee7-c601-496d-91bc-60728236a5d6",
+      "name": "List Lesson Folders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "='{{ $json.folderId }}' in parents and trashed = false"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name,mimeType,shortcutDetails)"
+            },
+            {
+              "name": "pageSize",
+              "value": "1000"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            },
+            {
+              "name": "includeItemsFromAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "SUPjCEhHQiGVch8A",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "84cf2f30-2ad2-4b21-9777-4f4654bcea68",
+      "name": "Identify Lessons",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Level 2: lesson folders inside each grade/unit folder.\n// Folder titles look like: \"Lesson 1 - Title\", \"Lesson 2-Title\", \"Lesson 3: Title\".\n\nconst out = [];\nconst inputs = $input.all();\n\nfor (let i = 0; i < inputs.length; i++) {\n  const files = inputs[i].json.files || [];\n  // Pair each response with the grade context that produced it.\n  const ctx = $('Identify Grades and Units').all()[i].json;\n\n  for (const f of files) {\n    if (f.mimeType !== 'application/vnd.google-apps.folder') continue;\n\n    const name = (f.name || '').trim();\n    const m = name.match(/^lesson\\s*(\\d+)\\s*[-:\u2013]?\\s*(.*)$/i);\n    if (!m) continue;  // not a lesson folder\n\n    const num = parseInt(m[1], 10);\n    let title = (m[2] || '').trim();\n\n    // \"Lesson 2-UNDER REVIEW\" carries no real title.\n    const underReview = /^under\\s*review$/i.test(title) || title === '';\n\n    out.push({ json: {\n      lessonId:    ctx.idPrefix + '.' + num,\n      folderId:    f.id,\n      folderName:  name,\n      gradeLabel:  ctx.gradeLabel,\n      gradeSort:   ctx.gradeSort,\n      unit:        ctx.unit,\n      lessonNumber: num,\n      title:       underReview ? '(Title TBC - lesson under review)' : title,\n      underReview\n    }});\n  }\n}\n\nreturn out;"
+      }
+    },
+    {
+      "id": "248e9a60-4e65-4e6a-b325-9c8129a985d6",
+      "name": "List Lesson Files",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1328,
+        0
+      ],
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "='{{ $json.folderId }}' in parents and trashed = false"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name,mimeType,size,md5Checksum,createdTime,owners(emailAddress),shortcutDetails,permissions(type,role))"
+            },
+            {
+              "name": "pageSize",
+              "value": "1000"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            },
+            {
+              "name": "includeItemsFromAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "SUPjCEhHQiGVch8A",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "8a6744bb-cc75-4dfb-bdda-3ace5deb2d5f",
+      "name": "Classify Assets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Level 3: classify every file in each lesson folder.\n// Emits one item per lesson, carrying its asset list plus any\n// translation subfolders that still need to be opened at level 4.\n\nconst LANG_RULES = [\n  { lang: 'es', re: /(\\[\\s*spanish\\s*\\]|en\\s+espa\u00f1ol|espanol|espa\u00f1ol|spanish)/i },\n  { lang: 'ht', re: /(haitian|hatian|creole|kreyol|krey\u00f2l)/i }\n];\n\nfunction detectLang(name, inheritedLang) {\n  for (const r of LANG_RULES) if (r.re.test(name)) return r.lang;\n  return inheritedLang || 'en';\n}\n\nfunction detectType(name, mime) {\n  const n = (name || '').toLowerCase();\n  if (/lesson\\s*plan|plan\\s*de\\s*la\\s*lecci/.test(n)) return 'LessonPlan';\n  if (/answer\\s*key/.test(n))                          return 'AnswerKey';\n  if (/reading\\s*passage|passage|lectura/.test(n))     return 'ReadingPassage';\n  if (/worksheet|hoja\\s*de\\s*trabajo/.test(n))         return 'Worksheet';\n  if (/coloring/.test(n))                              return 'ColoringSheet';\n  if (/\\bbook\\b|libro/.test(n))                        return 'Book';\n  if (/cards?\\b/.test(n))                              return 'Cards';\n  if (/rubric/.test(n))                                return 'Other';\n  if (mime && mime.includes('presentation'))           return 'Presentation';\n  if (mime && mime.includes('spreadsheet'))            return 'Dataset';\n  return 'Other';\n}\n\nfunction isPublic(perms) {\n  if (!Array.isArray(perms)) return false;\n  return perms.some(p => p.type === 'anyone' && (p.role === 'reader' || p.role === 'writer'));\n}\n\nconst out = [];\nconst inputs = $input.all();\nconst lessons = $('Identify Lessons').all();\n\nfor (let i = 0; i < inputs.length; i++) {\n  const files  = inputs[i].json.files || [];\n  const lesson = lessons[i].json;\n\n  const assets = [];\n  const translationFolders = [];\n  const flags = [];\n\n  for (const f of files) {\n    const name = f.name || '';\n\n    // Subfolders: translation folders get opened at level 4.\n    if (f.mimeType === 'application/vnd.google-apps.folder') {\n      const lang = detectLang(name, null);\n      if (lang !== 'en') translationFolders.push({ folderId: f.id, lang, name });\n      continue;\n    }\n\n    // Shortcuts point elsewhere; follow the target ID.\n    if (f.mimeType === 'application/vnd.google-apps.shortcut') {\n      const tid  = f.shortcutDetails && f.shortcutDetails.targetId;\n      const tmt  = f.shortcutDetails && f.shortcutDetails.targetMimeType;\n      const lang = detectLang(name, null);\n      if (tid && tmt === 'application/vnd.google-apps.folder') {\n        if (lang !== 'en') translationFolders.push({ folderId: tid, lang, name });\n      } else if (tid) {\n        assets.push({ fileId: tid, title: name, mimeType: tmt || null,\n                      language: lang, assetType: detectType(name, tmt),\n                      fileSize: null, md5: null, isPublic: false,\n                      viaShortcut: true, ownerEmail: null, needsResourcekey: false });\n      }\n      continue;\n    }\n\n    const size    = f.size ? parseInt(f.size, 10) : 0;\n    const created = f.createdTime ? new Date(f.createdTime) : null;\n    // Drive items created before ~Sept 2021 may require a resourcekey\n    // on the download URL. Flag rather than emit a link that 404s.\n    const legacy  = created && created < new Date('2021-09-01T00:00:00Z')\n                    && /^0B/.test(f.id);\n\n    if (size === 0) flags.push('ZERO_BYTE_FILE: ' + name);\n    if (legacy)     flags.push('NEEDS_RESOURCEKEY: ' + name);\n\n    assets.push({\n      fileId:     f.id,\n      title:      name,\n      mimeType:   f.mimeType || null,\n      language:   detectLang(name, null),\n      assetType:  detectType(name, f.mimeType),\n      fileSize:   size,\n      md5:        f.md5Checksum || null,\n      isPublic:   isPublic(f.permissions),\n      viaShortcut: false,\n      ownerEmail: (f.owners && f.owners[0] && f.owners[0].emailAddress) || null,\n      needsResourcekey: !!legacy\n    });\n  }\n\n  // Pick the teacher-facing lesson plan.\n  const candidates = assets.filter(a =>\n    a.assetType === 'LessonPlan' && a.language === 'en' &&\n    a.mimeType === 'application/pdf');\n\n  if (candidates.length === 1) {\n    candidates[0].isPrimary = true;\n  } else if (candidates.length > 1) {\n    flags.push('AMBIGUOUS_PRIMARY: ' + candidates.length + ' candidate lesson plans');\n  } else {\n    flags.push('NO_PRIMARY_PDF');\n  }\n\n  if (files.length === 0) flags.push('EMPTY_FOLDER');\n\n  // Status is derived, never auto-promoted to Active.\n  let status = 'Draft';\n  if (files.length === 0 || lesson.underReview) status = 'Under review';\n  if (flags.some(f => f.startsWith('AMBIGUOUS_PRIMARY'))) status = 'Under review';\n\n  out.push({ json: Object.assign({}, lesson, {\n    assets, translationFolders, flags, derivedStatus: status\n  })});\n}\n\nreturn out;"
+      }
+    },
+    {
+      "id": "ef9b028a-1e72-4086-bae7-9a313e029fe0",
+      "name": "Fan Out Translation Folders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// One item per translation subfolder, so level 4 can list them.\n// If there are none, emit a single no-op item so the branch still runs.\nconst out = [];\nfor (const item of $input.all()) {\n  for (const tf of (item.json.translationFolders || [])) {\n    out.push({ json: { lessonId: item.json.lessonId, folderId: tf.folderId, lang: tf.lang } });\n  }\n}\nif (out.length === 0) out.push({ json: { noop: true, folderId: null, lessonId: null, lang: null } });\nreturn out;"
+      }
+    },
+    {
+      "id": "4fefaa91-d993-4196-825c-3625090feacc",
+      "name": "List Translated Files",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1984,
+        0
+      ],
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "='{{ $json.folderId || 'missing' }}' in parents and trashed = false"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name,mimeType,size,md5Checksum,createdTime,owners(emailAddress),permissions(type,role))"
+            },
+            {
+              "name": "pageSize",
+              "value": "1000"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            },
+            {
+              "name": "includeItemsFromAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "SUPjCEhHQiGVch8A",
+          "name": "Google Drive account"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "36f996c3-e844-47b2-8959-ae5dc41ade84",
+      "name": "Merge Translations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Merge translated files back into their lessons, then flatten to\n// one row per asset for the database upsert.\n\nfunction detectType(name, mime) {\n  const n = (name || '').toLowerCase();\n  if (/lesson\\s*plan|plan\\s*de\\s*la\\s*lecci/.test(n)) return 'LessonPlan';\n  if (/reading\\s*passage|passage|lectura/.test(n))     return 'ReadingPassage';\n  if (/worksheet|hoja\\s*de\\s*trabajo/.test(n))         return 'Worksheet';\n  if (/coloring/.test(n))                              return 'ColoringSheet';\n  if (/glossar|vocab|glosario/.test(n))                return 'Other';\n  if (/\\bbook\\b|libro/.test(n))                        return 'Book';\n  if (/cards?\\b/.test(n))                              return 'Cards';\n  if (mime && mime.includes('presentation'))           return 'Presentation';\n  return 'Other';\n}\nfunction isPublic(perms) {\n  return Array.isArray(perms) && perms.some(p => p.type === 'anyone' && (p.role === 'reader' || p.role === 'writer'));\n}\n\nconst lessons = $('Classify Assets').all().map(i => JSON.parse(JSON.stringify(i.json)));\nconst byId = {};\nfor (const l of lessons) byId[l.lessonId] = l;\n\nconst fanout   = $('Fan Out Translation Folders').all().map(i => i.json);\nconst responses = $input.all();\n\nfor (let i = 0; i < responses.length && i < fanout.length; i++) {\n  const ctx = fanout[i];\n  if (!ctx || ctx.noop || !ctx.lessonId) continue;\n  const lesson = byId[ctx.lessonId];\n  if (!lesson) continue;\n\n  const files = (responses[i].json && responses[i].json.files) || [];\n  for (const f of files) {\n    // Nested translation folders (3.3 has one) - one extra level, inline.\n    if (f.mimeType === 'application/vnd.google-apps.folder') continue;\n    if (f.mimeType === 'application/vnd.google-apps.shortcut') continue;\n\n    const size = f.size ? parseInt(f.size, 10) : 0;\n    if (size === 0) lesson.flags.push('ZERO_BYTE_FILE: ' + f.name);\n\n    lesson.assets.push({\n      fileId: f.id, title: f.name, mimeType: f.mimeType || null,\n      language: ctx.lang, assetType: detectType(f.name, f.mimeType),\n      fileSize: size, md5: f.md5Checksum || null,\n      isPublic: isPublic(f.permissions), viaShortcut: false,\n      ownerEmail: (f.owners && f.owners[0] && f.owners[0].emailAddress) || null,\n      needsResourcekey: false, isPrimary: false\n    });\n  }\n}\n\n// Flatten: one output item per lesson, assets nested as JSON.\nreturn Object.values(byId).map(l => {\n  const langs = Array.from(new Set(l.assets.map(a => a.language))).sort();\n  return { json: Object.assign({}, l, {\n    languages: langs,\n    assetCount: l.assets.length,\n    lessonUrl: 'https://drive.google.com/drive/folders/' + l.folderId,\n    assetsJson: JSON.stringify(l.assets),\n    flagsText: l.flags.join(' | ')\n  })};\n});"
+      }
+    },
+    {
+      "id": "f8aeea48-0e1f-4d94-a0d5-d33fc375964d",
+      "name": "Upsert Lesson",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2432,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Upsert the lesson. Education-owned columns are never touched.\nINSERT INTO lessons (\n    lesson_id, folder_id, grade_label, grade_sort, unit,\n    lesson_number, title, lesson_url, status, machine_notes,\n    seen_this_run, last_seen_at\n) VALUES (\n    $1, $2, $3, $4, $5, $6, $7, $8,\n    CASE WHEN $9 = '' THEN 'Draft' ELSE $9 END,\n    $10, true, now()\n)\nON CONFLICT (lesson_id) DO UPDATE SET\n    folder_id     = EXCLUDED.folder_id,\n    grade_label   = EXCLUDED.grade_label,\n    grade_sort    = EXCLUDED.grade_sort,\n    unit          = EXCLUDED.unit,\n    lesson_number = EXCLUDED.lesson_number,\n    title         = EXCLUDED.title,\n    lesson_url    = EXCLUDED.lesson_url,\n    machine_notes = EXCLUDED.machine_notes,\n    seen_this_run = true,\n    last_seen_at  = now(),\n    -- Never demote a human-approved Active lesson, and never auto-promote.\n    status = CASE\n        WHEN lessons.status = 'Active' AND EXCLUDED.status = 'Under review'\n            THEN 'Under review'\n        WHEN lessons.status = 'Active' THEN 'Active'\n        ELSE EXCLUDED.status\n    END\nRETURNING lesson_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.lessonId, $json.folderId, $json.gradeLabel, $json.gradeSort, $json.unit, $json.lessonNumber, $json.title, $json.lessonUrl, $json.derivedStatus, $json.flagsText] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "33pvAUPjxIblgtZI",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "35c08771-0736-4dd8-94f1-8bd9fd3e4557",
+      "name": "Build Bulk Asset Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// One JSON array for bulk upsert \u2014 replaces ~200 individual queries.\nconst assets = [];\nfor (const item of $('Merge Translations').all()) {\n  const l = item.json;\n  for (const a of JSON.parse(l.assetsJson)) {\n    assets.push({\n      file_id: a.fileId,\n      lesson_id: l.lessonId,\n      asset_type: a.assetType,\n      language: a.language,\n      title: a.title,\n      mime_type: a.mimeType,\n      file_size: a.fileSize === null ? 0 : a.fileSize,\n      md5_checksum: a.md5 || '',\n      view_url: 'https://drive.google.com/file/d/' + a.fileId + '/view',\n      download_url: 'https://drive.google.com/uc?export=download&id=' + a.fileId,\n      is_public: !!a.isPublic,\n      is_primary: !!a.isPrimary,\n      needs_resourcekey: !!a.needsResourcekey,\n      owner_email: a.ownerEmail || ''\n    });\n  }\n}\nreturn [{ json: { assetsJson: JSON.stringify(assets) } }];"
+      }
+    },
+    {
+      "id": "d5f853f4-1287-4593-a6e5-db85e135c302",
+      "name": "Bulk Upsert Assets",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2864,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO lesson_assets (\n    file_id, lesson_id, asset_type, language, title, mime_type,\n    file_size, md5_checksum, view_url, download_url,\n    is_public, is_primary, needs_resourcekey, owner_email, last_seen_at\n)\nSELECT\n    x.file_id, x.lesson_id, x.asset_type, x.language, x.title, x.mime_type,\n    x.file_size, NULLIF(x.md5_checksum, ''), x.view_url, x.download_url,\n    x.is_public, x.is_primary, x.needs_resourcekey, NULLIF(x.owner_email, ''), now()\nFROM (\n    SELECT DISTINCT ON (file_id)\n        file_id, lesson_id, asset_type, language, title, mime_type,\n        file_size, md5_checksum, view_url, download_url,\n        is_public, is_primary, needs_resourcekey, owner_email\n    FROM jsonb_to_recordset($1::jsonb) AS t(\n        file_id text, lesson_id text, asset_type text, language text,\n        title text, mime_type text, file_size bigint, md5_checksum text,\n        view_url text, download_url text, is_public boolean, is_primary boolean,\n        needs_resourcekey boolean, owner_email text\n    )\n    WHERE file_id IS NOT NULL\n    ORDER BY file_id,\n             is_primary DESC NULLS LAST,\n             is_public DESC NULLS LAST,\n             COALESCE(file_size, 0) DESC\n) x\nON CONFLICT (file_id) DO UPDATE SET\n    lesson_id         = EXCLUDED.lesson_id,\n    asset_type        = EXCLUDED.asset_type,\n    language          = EXCLUDED.language,\n    title             = EXCLUDED.title,\n    mime_type         = EXCLUDED.mime_type,\n    file_size         = EXCLUDED.file_size,\n    view_url          = EXCLUDED.view_url,\n    download_url      = EXCLUDED.download_url,\n    is_public         = EXCLUDED.is_public,\n    is_primary        = EXCLUDED.is_primary,\n    needs_resourcekey = EXCLUDED.needs_resourcekey,\n    owner_email       = EXCLUDED.owner_email,\n    last_seen_at      = now(),\n    needs_embedding   = (lesson_assets.md5_checksum IS DISTINCT FROM EXCLUDED.md5_checksum),\n    md5_checksum      = EXCLUDED.md5_checksum;\n",
+        "options": {
+          "queryReplacement": "={{ $json.assetsJson }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "33pvAUPjxIblgtZI",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "8dd18c2f-e691-41c3-b8fb-d8db5fc33931",
+      "name": "Retire Missing Lessons",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3088,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Retire only lessons not seen during this crawl run.\nUPDATE lessons\n   SET status = 'Retired',\n       machine_notes = COALESCE(machine_notes,'') || ' | not found in Drive on ' || now()::date\n WHERE seen_this_run = false\n   AND status <> 'Retired'\nRETURNING lesson_id;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "33pvAUPjxIblgtZI",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "62773a34-d3a6-4886-aec2-eacc98c21394",
+      "name": "Mark Run Complete",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3312,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE sync_state\n   SET last_run_at = now(), last_run_status = 'ok'\n WHERE id = 'drive';",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "33pvAUPjxIblgtZI",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "5810dd56-c944-4927-8c68-14fd6115e6a7",
+      "name": "Run Index Writer",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        3520,
+        0
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "uht4O5B19PaCoC21",
+          "mode": "id",
+          "cachedResultName": "Lesson Finder - WF2 Index Writer"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "wf1-manual-trigger",
+      "name": "When clicking Test workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "wf1-ssl-note",
+      "name": "Postgres SSL",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -40
+      ],
+      "parameters": {
+        "content": "## Postgres credential\n\n**Connection refused / 127.0.0.1:5432** means Host is empty. n8n then talks to itself, not Supabase.\n\n1. Open the **Supabase project** \u2192 **Connect** (or Settings \u2192 Database)\n2. Choose **Session pooler** (port **5432**), not Transaction pooler (6543)\n3. Paste into n8n **Postgres account**:\n\n- Host = `aws-0-<region>.pooler.supabase.com`\n- User = `postgres.<project-ref>`\n- Password = database password\n- Database = `postgres`\n- Port = `5432`\n- SSL = **Require**\n- **Ignore SSL Issues** = **On**\n\n4. Click **Retest** \u2014 it must succeed \u2014 then **Save**\n5. Test this workflow again\n\nDo not leave Host blank. Do not use localhost.\n\n---\n\n## Google Drive HTTP Request\n\n**List Grade Folders** is an HTTP Request node on Drive v3. n8n blocks that until:\n\nCredentials \u2192 **Google Drive account** \u2192 **Details**\n- Allow in HTTP Request node = **On**\n- Allowed domains = **googleapis.com** (not all)\n\nSave, then Test this workflow. Do not change this via API.",
+        "height": 640,
+        "width": 420,
+        "color": 5
+      }
+    }
+  ],
+  "connections": {
+    "Nightly 2am": {
+      "main": [
+        [
+          {
+            "node": "Curriculum Root",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Curriculum Root": {
+      "main": [
+        [
+          {
+            "node": "Mark Crawl Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Crawl Start": {
+      "main": [
+        [
+          {
+            "node": "List Grade Folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Grade Folders": {
+      "main": [
+        [
+          {
+            "node": "Identify Grades and Units",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify Grades and Units": {
+      "main": [
+        [
+          {
+            "node": "List Lesson Folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Lesson Folders": {
+      "main": [
+        [
+          {
+            "node": "Identify Lessons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify Lessons": {
+      "main": [
+        [
+          {
+            "node": "List Lesson Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Lesson Files": {
+      "main": [
+        [
+          {
+            "node": "Classify Assets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Assets": {
+      "main": [
+        [
+          {
+            "node": "Fan Out Translation Folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fan Out Translation Folders": {
+      "main": [
+        [
+          {
+            "node": "List Translated Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Translated Files": {
+      "main": [
+        [
+          {
+            "node": "Merge Translations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Translations": {
+      "main": [
+        [
+          {
+            "node": "Upsert Lesson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Lesson": {
+      "main": [
+        [
+          {
+            "node": "Build Bulk Asset Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Bulk Asset Payload": {
+      "main": [
+        [
+          {
+            "node": "Bulk Upsert Assets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bulk Upsert Assets": {
+      "main": [
+        [
+          {
+            "node": "Retire Missing Lessons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retire Missing Lessons": {
+      "main": [
+        [
+          {
+            "node": "Mark Run Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Run Complete": {
+      "main": [
+        [
+          {
+            "node": "Run Index Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking Test workflow": {
+      "main": [
+        [
+          {
+            "node": "Curriculum Root",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "0f5d91a2-5ce3-44a2-ac97-c75a8b118a4a"
+}

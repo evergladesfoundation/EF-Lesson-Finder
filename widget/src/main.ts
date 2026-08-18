@@ -12,16 +12,20 @@ const QUICK_PROMPTS = [
 const GREETING =
   "Hi! I can help you find Everglades Literacy lessons by topic, grade level, NGSSS standard, or Fundamental Concept. What are you looking for?";
 
-// Real lesson pages/PDFs don't exist yet (Phase 1 data pipeline). Until then,
-// "View lesson" opens a static placeholder so stakeholders can see the click-through
-// working end to end. Resolved against the widget script's own origin (via
-// document.currentScript) so it still works once widget.js is served from a CDN.
+// Bundled mock catalog still points at placeholder evergladesliteracy.org URLs.
+// Live n8n rows use Google Drive folder/PDF links — open those when present.
 function demoLessonUrl(lesson: Lesson): string {
   const scriptSrc = (document.currentScript as HTMLScriptElement | null)?.src;
   const base = new URL(scriptSrc ?? location.href);
   const url = new URL("lesson-plan-demo.html", base);
   url.searchParams.set("title", lesson.title);
   return url.toString();
+}
+
+function lessonLink(lesson: Lesson): string {
+  const live = lesson.lessonUrl || lesson.pdfUrl;
+  if (live && /drive\.google\.com/i.test(live)) return live;
+  return demoLessonUrl(lesson);
 }
 
 function svgIcon(path: string, size = 24): SVGSVGElement {
@@ -167,12 +171,17 @@ class LessonFinderWidget {
     this.addUserBubble(query);
     this.input.value = "";
 
-    const reply = searchLessons(query);
-    this.addAssistantBubble(reply.text);
-    for (const lesson of reply.lessons) {
-      this.addLessonCard(lesson);
-    }
-    this.scrollToBottom();
+    const pending = this.addAssistantBubble("Searching the Teacher Toolkit…");
+    pending.classList.add("elf-pending");
+
+    void searchLessons(query).then((reply) => {
+      pending.remove();
+      this.addAssistantBubble(reply.text);
+      for (const lesson of reply.lessons) {
+        this.addLessonCard(lesson);
+      }
+      this.scrollToBottom();
+    });
   }
 
   private addUserBubble(text: string): void {
@@ -183,12 +192,13 @@ class LessonFinderWidget {
     this.scrollToBottom();
   }
 
-  private addAssistantBubble(text: string): void {
+  private addAssistantBubble(text: string): HTMLDivElement {
     const bubble = document.createElement("div");
     bubble.className = "elf-bubble elf-assistant";
     bubble.textContent = text;
     this.body.appendChild(bubble);
     this.scrollToBottom();
+    return bubble;
   }
 
   private addLessonCard(lesson: Lesson): void {
@@ -221,7 +231,7 @@ class LessonFinderWidget {
 
     const link = document.createElement("a");
     link.className = "elf-card-link";
-    link.href = demoLessonUrl(lesson);
+    link.href = lessonLink(lesson);
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.textContent = "View lesson →";

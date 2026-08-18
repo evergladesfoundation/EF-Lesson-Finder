@@ -1,4 +1,5 @@
 import { LESSONS } from "./data/lessons";
+import { searchLessonsViaN8n } from "./n8n";
 import type { ChatReply, Lesson } from "./types";
 
 const MAX_RESULTS = 4;
@@ -50,10 +51,25 @@ function extractStandard(query: string): string | null {
   return match ? match[1].toUpperCase() : null;
 }
 
-// Mirrors the eventual search_lessons tool: turns free text into structured
-// filters (grade, standard, keyword) rather than doing pure fuzzy matching.
-// Swap this module's internals for a POST /chat call once Phase 2 backend exists.
-export function searchLessons(query: string): ChatReply {
+function describeMatches(
+  matches: Lesson[],
+  filters: { grade: number | null; standard: string | null },
+): string {
+  const lead = matches.length === 1 ? "Here's a lesson" : `Here are ${matches.length} lessons`;
+
+  if (filters.standard) {
+    return `${lead} aligned with ${filters.standard}:`;
+  }
+  if (filters.grade !== null) {
+    const gradeLabel = filters.grade === -1 ? "PreK" : filters.grade === 0 ? "Kindergarten" : `grade ${filters.grade}`;
+    return `${lead} for ${gradeLabel}:`;
+  }
+  return `${lead} from the Teacher Toolkit:`;
+}
+
+// Local keyword/grade/NGSSS scoring used when n8n is unreachable or the
+// Postgres catalog has not been crawled yet (WF1 still inactive).
+export function searchLessonsLocal(query: string): ChatReply {
   const trimmed = query.trim();
   if (!trimmed) {
     return {
@@ -118,18 +134,10 @@ export function searchLessons(query: string): ChatReply {
   };
 }
 
-function describeMatches(
-  matches: Lesson[],
-  filters: { grade: number | null; standard: string | null },
-): string {
-  const lead = matches.length === 1 ? "Here's a lesson" : `Here are ${matches.length} lessons`;
-
-  if (filters.standard) {
-    return `${lead} aligned with ${filters.standard}:`;
-  }
-  if (filters.grade !== null) {
-    const gradeLabel = filters.grade === -1 ? "PreK" : filters.grade === 0 ? "Kindergarten" : `grade ${filters.grade}`;
-    return `${lead} for ${gradeLabel}:`;
-  }
-  return `${lead} from the Teacher Toolkit:`;
+// Prefer n8n WF3 (Postgres Active lessons). Fall back to the bundled catalog
+// when the webhook errors or WF1 has not populated `lessons` yet.
+export async function searchLessons(query: string): Promise<ChatReply> {
+  const live = await searchLessonsViaN8n(query);
+  if (live) return live;
+  return searchLessonsLocal(query);
 }

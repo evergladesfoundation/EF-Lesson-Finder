@@ -1,0 +1,399 @@
+{
+  "name": "Lesson Finder - WF2 Index Writer",
+  "id": "uht4O5B19PaCoC21",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "2195e50a-de00-49ac-8afe-291f77ae922e",
+      "name": "Called by WF1",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Single query drives conditional Excel write and email digest.\nSELECT\n  (SELECT count(*) FROM lessons\n     WHERE last_seen_at > now() - interval '30 minutes')          AS lessons_touched,\n  (SELECT count(*) FROM lesson_assets\n     WHERE last_seen_at > now() - interval '30 minutes')          AS assets_touched,\n  (extract(dow from now()) = 0)                                   AS is_sunday,\n  (SELECT count(*) FROM lessons WHERE status = 'Active')          AS active_lessons,\n  (SELECT count(*) FROM lessons WHERE status = 'Draft')           AS draft_lessons,\n  (SELECT count(*) FROM lessons WHERE status = 'Under review')    AS review_lessons,\n  (SELECT count(*) FROM lessons WHERE status = 'Retired')         AS retired_lessons,\n  (SELECT count(*) FROM lessons\n     WHERE status <> 'Retired' AND (summary IS NULL OR summary = '')) AS missing_summary,\n  (SELECT count(*) FROM lessons\n     WHERE status <> 'Retired' AND (standards_raw IS NULL OR standards_raw = '')) AS missing_standards,\n  (SELECT count(*) FROM lesson_assets\n     WHERE is_primary AND is_public = false)                       AS plans_not_public,\n  (SELECT count(*) FROM lesson_assets\n     WHERE COALESCE(file_size,0) = 0)                              AS zero_byte_files,\n  (SELECT count(*) FROM lesson_assets\n     WHERE needs_resourcekey)                                       AS resourcekey_files,\n  (SELECT count(DISTINCT lesson_id) FROM lesson_assets\n     WHERE language = 'es')                                        AS lessons_with_spanish,\n  (SELECT count(DISTINCT lesson_id) FROM lesson_assets\n     WHERE language = 'ht')                                        AS lessons_with_creole,\n  (SELECT count(*) FROM lessons\n     WHERE first_seen_at > now() - interval '25 hours')            AS newly_discovered,\n  (SELECT COALESCE(string_agg(lesson_id || ': ' || machine_notes, E'\\n'), '(none)')\n     FROM lessons\n    WHERE machine_notes IS NOT NULL AND machine_notes <> ''\n      AND status <> 'Retired')                                     AS flagged_rows;",
+        "options": {}
+      },
+      "id": "677f5477-36b4-42d4-afac-ea54dcef2cc9",
+      "name": "Check Run Summary",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -448,
+        112
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "33pvAUPjxIblgtZI",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "had-changes",
+              "leftValue": "={{ +$json.lessons_touched + +$json.assets_touched }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ac22a0c4-2b21-4e2a-a232-3f79c363ffc0",
+      "name": "Had Structural Changes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    l.lesson_id, l.grade_label, l.grade_sort,\n    COALESCE(l.theme, '')                             AS theme,\n    l.lesson_number, l.title,\n    COALESCE(l.summary, '')                           AS summary,\n    COALESCE(l.topic_tags, '')                        AS topic_tags,\n    COALESCE(l.concepts, '')                          AS concepts,\n    COALESCE(l.standards_raw, '')                     AS standards_raw,\n    COALESCE(l.framework, '')                         AS framework,\n    l.lesson_url,\n    COALESCE(p.download_url, '')                      AS pdf_url,\n    l.status,\n    COALESCE(l.machine_notes, '')                     AS machine_notes,\n    COALESCE(langs.list, 'en')                        AS languages,\n    COALESCE(l.unit, '')                              AS unit\nFROM lessons l\nLEFT JOIN LATERAL (\n    SELECT a.download_url FROM servable_assets a\n     WHERE a.lesson_id = l.lesson_id AND a.is_primary LIMIT 1\n) p ON true\nLEFT JOIN LATERAL (\n    SELECT string_agg(DISTINCT a.language, ', ' ORDER BY a.language) AS list\n      FROM servable_assets a WHERE a.lesson_id = l.lesson_id\n) langs ON true\nORDER BY l.grade_sort NULLS LAST, l.unit NULLS FIRST, l.lesson_number;",
+        "options": {}
+      },
+      "id": "07c19921-8208-488d-969e-b1365b070ad5",
+      "name": "Fetch Index Rows",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "33pvAUPjxIblgtZI",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const GRADE_SYNONYMS = {\n  '-1': 'Pre-K, PreK, Pre-Kindergarten, Prekindergarten, VPK',\n  '0':  'Kindergarten, K',\n  '1':  'First, 1st, 1',\n  '2':  'Second, 2nd, 2',\n  '3':  'Third, 3rd, 3',\n  '4':  'Fourth, 4th, 4',\n  '5':  'Fifth, 5th, 5',\n  '6':  'Sixth, 6th, 6',\n  '7':  'Seventh, 7th, 7',\n  '8':  'Eighth, 8th, 8',\n  '9':  'Ninth, Tenth, Eleventh, Twelfth, 9th, 10th, 11th, 12th, 9, 10, 11, 12, 9-12, High School'\n};\nconst LANG_NAMES = { en: 'English', es: 'Spanish', ht: 'Haitian Creole' };\n\nreturn $input.all().map(item => {\n  const r = item.json;\n  const gs = r.grade_sort === null || r.grade_sort === undefined ? '' : String(r.grade_sort);\n  const langs = (r.languages || 'en').split(',').map(s => s.trim()).filter(Boolean)\n    .map(c => LANG_NAMES[c] || c).join(', ');\n  const theme = r.theme || (r.unit ? r.unit : '');\n  return { json: {\n    'Lesson ID': r.lesson_id,\n    'Grade': GRADE_SYNONYMS[gs] || r.grade_label || '',\n    'Grade Sort': r.grade_sort,\n    'Theme / Topic': theme,\n    'Lesson #': r.lesson_number,\n    'Title of Lesson': r.title,\n    'Summary of Lesson': r.summary,\n    'Topic Tags': r.topic_tags,\n    'Fundamental Concepts': r.concepts,\n    'Standards (as published)': r.standards_raw,\n    'Standards Framework': r.framework,\n    'lessonUrl': r.lesson_url,\n    'pdfUrl': r.pdf_url,\n    'Status': r.status,\n    'Notes': [r.machine_notes, 'Languages available: ' + langs].filter(Boolean).join(' | ')\n  }};\n});"
+      },
+      "id": "33d046b2-50ff-4b9a-bcfe-e6bc3f238bf8",
+      "name": "Shape Spreadsheet Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "worksheet",
+        "operation": "update",
+        "workbook": {
+          "__rl": true,
+          "value": "01CL7GLQNXIJZA3ILWP5DIBVH6WQING6Q4",
+          "mode": "list",
+          "cachedResultName": "Everglades Master Lesson Index.xlsx",
+          "cachedResultUrl": "https://evergladesfoundation-my.sharepoint.com/personal/yacosta_evergladesfoundation_org/_layouts/15/Doc.aspx?sourcedoc=%7B0D7242B7-76A1-467F-80D4-FEB410D37A1C%7D&file=Everglades%20Master%20Lesson%20Index.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "Lesson Index",
+          "mode": "name"
+        },
+        "useRange": true,
+        "range": "={{ $json.range }}",
+        "dataMode": "raw",
+        "data": "={{ $json.values }}",
+        "options": {
+          "rawData": true
+        }
+      },
+      "id": "c1cca2dc-0ad2-4388-be46-36cff1f91ed9",
+      "name": "Write to Master Index (OneDrive)",
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        0
+      ],
+      "notes": "Writes A5:O (header + rows). Education columns on existing Lesson IDs are preserved by Merge Index Rows.",
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "ZyFPqg5jbq4Q1reg",
+          "name": "Microsoft Excel OAuth2 API"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge run summary (always available) with optional Excel path.\nconst s = $('Check Run Summary').first().json;\n\nconst warn = [];\nif (+s.plans_not_public  > 0) warn.push(`${s.plans_not_public} lesson plan(s) are NOT publicly shared`);\nif (+s.zero_byte_files   > 0) warn.push(`${s.zero_byte_files} file(s) are 0 bytes`);\nif (+s.resourcekey_files > 0) warn.push(`${s.resourcekey_files} legacy file(s) need a resourcekey`);\nif (+s.review_lessons    > 0) warn.push(`${s.review_lessons} lesson(s) sitting in Under review`);\n\nconst blockers = [];\nif (+s.missing_summary   > 0) blockers.push(`${s.missing_summary} lesson(s) still have no summary`);\nif (+s.missing_standards > 0) blockers.push(`${s.missing_standards} lesson(s) still have no standards`);\n\nconst hadChanges = (+s.lessons_touched + +s.assets_touched) > 0;\nconst shouldEmail = warn.length > 0\n  || +s.newly_discovered > 0\n  || s.is_sunday\n  || hadChanges;\n\nconst html = `\n<h3>Everglades Lesson Finder - nightly index sync</h3>\n<p><b>${s.active_lessons}</b> active &middot; ${s.draft_lessons} draft &middot; ${s.review_lessons} under review &middot; ${s.retired_lessons} retired</p>\n${hadChanges ? '<p>Structural changes detected \u2014 master index updated.</p>' : '<p>No structural changes \u2014 master index left unchanged.</p>'}\n${+s.newly_discovered > 0 ? `<p><b>${s.newly_discovered} newly discovered lesson(s)</b> added as Draft.</p>` : ''}\n${warn.length ? `<p><b>Needs attention</b></p><ul>${warn.map(w => `<li>${w}</li>`).join('')}</ul>` : '<p>No file or permission problems detected.</p>'}\n${blockers.length ? `<p><b>Waiting on the Education Department</b></p><ul>${blockers.map(b => `<li>${b}</li>`).join('')}</ul>` : ''}\n<p><b>Language coverage:</b> Spanish ${s.lessons_with_spanish}, Haitian Creole ${s.lessons_with_creole}</p>\n<details><summary>Flagged rows</summary><pre>${String(s.flagged_rows).replace(/</g,'&lt;')}</pre></details>`;\n\nconst subject = warn.length\n  ? `Lesson Finder sync - ${warn.length} item(s) need attention`\n  : hadChanges\n    ? `Lesson Finder sync - ${s.active_lessons} active, index updated`\n    : `Lesson Finder sync - ${s.active_lessons} active, all healthy`;\n\nreturn [{ json: { subject, html, shouldEmail } }];"
+      },
+      "id": "adf213c3-f298-40ea-999d-936c0b0fee7f",
+      "name": "Build Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "send-email",
+              "leftValue": "={{ $json.shouldEmail }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ea25e484-263c-460f-8009-dcc6c5c10592",
+      "name": "Should Send Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        224,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "toRecipients": "yacosta@evergladesfoundation.org",
+        "subject": "={{ $json.subject }}",
+        "bodyContent": "={{ $json.html }}",
+        "additionalFields": {
+          "bodyContentType": "html"
+        }
+      },
+      "id": "2a6d3b04-ad3c-4d97-b8f2-23c047a61acb",
+      "name": "Email Digest",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        448,
+        224
+      ],
+      "webhookId": "7ed11846-f1aa-4adf-8d34-093be4be16fd",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "BqOQ9oZg9rS5NLiw",
+          "name": "Microsoft Outlook OAuth2 API"
+        }
+      }
+    },
+    {
+      "id": "excel-read-current",
+      "name": "Read Current Index",
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.2,
+      "position": [
+        360,
+        0
+      ],
+      "onError": "stopWorkflow",
+      "alwaysOutputData": true,
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "ZyFPqg5jbq4Q1reg",
+          "name": "Microsoft Excel OAuth2 API"
+        }
+      },
+      "parameters": {
+        "resource": "worksheet",
+        "operation": "readRows",
+        "workbook": {
+          "__rl": true,
+          "value": "01CL7GLQNXIJZA3ILWP5DIBVH6WQING6Q4",
+          "mode": "list",
+          "cachedResultName": "Everglades Master Lesson Index.xlsx",
+          "cachedResultUrl": "https://evergladesfoundation-my.sharepoint.com/personal/yacosta_evergladesfoundation_org/_layouts/15/Doc.aspx?sourcedoc=%7B0D7242B7-76A1-467F-80D4-FEB410D37A1C%7D&file=Everglades%20Master%20Lesson%20Index.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "Lesson Index",
+          "mode": "name"
+        },
+        "useRange": true,
+        "range": "A5:O80",
+        "options": {
+          "rawData": false
+        }
+      }
+    },
+    {
+      "id": "excel-merge-rows",
+      "name": "Merge Index Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const EDUCATION = [\n  'Theme / Topic',\n  'Summary of Lesson',\n  'Topic Tags',\n  'Fundamental Concepts',\n  'Standards (as published)',\n  'Standards Framework',\n];\nconst COLS = [\n  'Lesson ID', 'Grade', 'Grade Sort', 'Theme / Topic', 'Lesson #',\n  'Title of Lesson', 'Summary of Lesson', 'Topic Tags', 'Fundamental Concepts',\n  'Standards (as published)', 'Standards Framework', 'lessonUrl', 'pdfUrl',\n  'Status', 'Notes',\n];\nconst MACHINE = COLS.filter(c => c !== 'Lesson ID' && !EDUCATION.includes(c));\n\nfunction normId(v) {\n  if (v === undefined || v === null) return '';\n  return String(v).trim();\n}\nfunction idsMatch(a, b) {\n  const sa = normId(a), sb = normId(b);\n  if (!sa || !sb) return false;\n  if (sa === sb) return true;\n  const na = Number(sa), nb = Number(sb);\n  return sa !== '' && sb !== '' && !Number.isNaN(na) && !Number.isNaN(nb) && na === nb;\n}\n\nconst incoming = $('Shape Spreadsheet Rows').all().map(i => i.json);\nconst existingRaw = $input.all().map(i => i.json);\nconst existing = [];\nconst seenExisting = new Set();\nfor (const r of existingRaw) {\n  const id = normId(r['Lesson ID']);\n  if (!id || id === 'Lesson ID') continue;\n  const key = Number(id) && !Number.isNaN(Number(id)) ? String(Number(id)) : id;\n  if (seenExisting.has(key)) continue;\n  seenExisting.add(key);\n  existing.push(r);\n}\n\nconst usedIncoming = new Set();\nconst merged = [];\n\nfor (const old of existing) {\n  const inc = incoming.find(x => idsMatch(x['Lesson ID'], old['Lesson ID']));\n  if (!inc) {\n    merged.push(old);\n    continue;\n  }\n  usedIncoming.add(inc);\n  const row = { ...old };\n  for (const k of MACHINE) {\n    if (inc[k] !== undefined && inc[k] !== null && inc[k] !== '') row[k] = inc[k];\n  }\n  merged.push(row);\n}\n\nfor (const inc of incoming) {\n  if (usedIncoming.has(inc)) continue;\n  if (existing.some(old => idsMatch(old['Lesson ID'], inc['Lesson ID']))) continue;\n  merged.push(inc);\n}\n\nconst values = [COLS, ...merged.map(r => COLS.map(c => (r[c] === undefined || r[c] === null ? '' : r[c])))];\nconst endRow = 4 + values.length; // header at row 5\nreturn [{ json: { values, range: `A5:O${endRow}`, rowCount: merged.length } }];\n"
+      }
+    }
+  ],
+  "connections": {
+    "Called by WF1": {
+      "main": [
+        [
+          {
+            "node": "Check Run Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Run Summary": {
+      "main": [
+        [
+          {
+            "node": "Had Structural Changes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Had Structural Changes?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Index Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Index Rows": {
+      "main": [
+        [
+          {
+            "node": "Shape Spreadsheet Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape Spreadsheet Rows": {
+      "main": [
+        [
+          {
+            "node": "Read Current Index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write to Master Index (OneDrive)": {
+      "main": [
+        [
+          {
+            "node": "Build Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Digest": {
+      "main": [
+        [
+          {
+            "node": "Should Send Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Email?": {
+      "main": [
+        [
+          {
+            "node": "Email Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Current Index": {
+      "main": [
+        [
+          {
+            "node": "Merge Index Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Index Rows": {
+      "main": [
+        [
+          {
+            "node": "Write to Master Index (OneDrive)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "pinData": {},
+  "meta": null,
+  "versionId": "8e2d6f22-6ef8-4dc4-bf5f-46f4c8bd82de"
+}
