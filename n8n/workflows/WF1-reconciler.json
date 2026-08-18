@@ -86,7 +86,7 @@
           "parameters": [
             {
               "name": "q",
-              "value": "='{{ $json.folderId }}' in parents and trashed = false"
+              "value": "='{{ $('Curriculum Root').item.json.folderId }}' in parents and trashed = false"
             },
             {
               "name": "fields",
@@ -683,5 +683,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "ed1ebbb2-071e-49bf-be02-28a1fc631191"
+  "versionId": "10b3fbd7-35c2-4afc-854a-7f0a2a846279"
 }
