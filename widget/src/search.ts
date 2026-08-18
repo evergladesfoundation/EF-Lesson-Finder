@@ -14,7 +14,7 @@ const GRADE_WORDS: Record<string, number> = {
 };
 
 // NGSSS (SC.3.L.15.1), B.E.S.T. ELA (ELA.3.R.2.2), and similar dotted codes.
-const STANDARD_PATTERN = /\b([A-Z]{2,4}(?:\.[A-Z0-9]+)+)\b/i;
+const STANDARD_PATTERN = /\b([A-Z]{2,4}(?:\.[A-Z0-9]+)+(?:\.[a-z])?)\b/i;
 
 // Question scaffolding, not lesson content — stripped before keyword matching
 // so a query doesn't match a lesson on a word like "what" or "cover" alone.

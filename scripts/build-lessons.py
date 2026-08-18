@@ -10,6 +10,7 @@ import openpyxl
 
 ROOT = Path(__file__).resolve().parents[1]
 XLSX = ROOT / "data" / "Everglades_Master_Lesson_Index.xlsx"
+PDF_META = ROOT / "data" / "pdf-metadata.json"
 OUT = ROOT / "widget" / "src" / "data" / "lessons.ts"
 
 CONCEPTS = {
@@ -89,7 +90,19 @@ def js_string_array(values: list[str]) -> str:
     return f"[{inner}]"
 
 
+def load_pdf_meta() -> dict[str, dict]:
+    if not PDF_META.exists():
+        return {}
+    rows = json.loads(PDF_META.read_text(encoding="utf-8"))
+    return {row["id"]: row for row in rows}
+
+
+def concept_from_numbers(nums: list[int]) -> str:
+    return " ".join(CONCEPTS[n] for n in nums if n in CONCEPTS)
+
+
 def main() -> None:
+    pdf_meta = load_pdf_meta()
     wb = openpyxl.load_workbook(XLSX, data_only=True)
     ws = wb["Lesson Index"]
     headers = [c.value for c in next(ws.iter_rows(min_row=5, max_row=5))]
@@ -102,15 +115,32 @@ def main() -> None:
         if rec.get("Status") != "Active":
             continue
 
+        lesson_id = str(rec["Lesson ID"])
+        extracted = pdf_meta.get(lesson_id, {})
         grade_sort = int(rec["Grade Sort"])
         grade_col = rec.get("Grade") or ""
         grade_range, grade_min, grade_max = grade_band(grade_col, grade_sort)
         theme = (rec.get("Theme / Topic") or "").strip()
         title = str(rec["Title of Lesson"]).strip()
-        topics = unique(split_list(rec.get("Topic Tags")) + split_list(theme))
-        standards = split_list(rec.get("Standards (as published)"))
-        summary = (rec.get("Summary of Lesson") or "").strip() or fallback_summary(
-            title, grade_range, theme
+        topics = unique(
+            split_list(rec.get("Topic Tags"))
+            + split_list(theme)
+            + extracted.get("vocab", [])
+            + extracted.get("prekDomains", [])
+        )
+        standards = split_list(rec.get("Standards (as published)")) or extracted.get(
+            "standards", []
+        )
+        sheet_concepts = (rec.get("Fundamental Concepts") or "").strip()
+        concept = (
+            concept_label(sheet_concepts)
+            if sheet_concepts
+            else concept_from_numbers(extracted.get("concepts") or [])
+        )
+        summary = (
+            (rec.get("Summary of Lesson") or "").strip()
+            or (extracted.get("summary") or "").strip()
+            or fallback_summary(title, grade_range, theme)
         )
         pdf = (rec.get("pdfUrl") or "").strip()
         folder = (rec.get("lessonUrl") or "").strip()
@@ -124,7 +154,7 @@ def main() -> None:
                 "gradeMax": grade_max,
                 "topics": topics,
                 "ngsssStandards": standards,
-                "fundamentalConcept": concept_label(rec.get("Fundamental Concepts")),
+                "fundamentalConcept": concept,
                 "summary": summary,
                 "lessonUrl": folder,
                 "pdfUrl": pdf,
@@ -155,10 +185,11 @@ def main() -> None:
 
     header = """import type { Lesson } from "../types";
 
-// Active lessons from data/Everglades_Master_Lesson_Index.xlsx.
+// Active lessons from data/Everglades_Master_Lesson_Index.xlsx,
+// with overviews/standards filled from the lesson PDFs when the sheet is blank.
 // Draft / Under review rows are omitted (Legend: only Active is served).
 // lessonUrl is the Google Drive folder; pdfUrl is the direct PDF download.
-// Regenerate: python3 scripts/build-lessons.py
+// Regenerate: python3 scripts/extract-pdf-metadata.py && python3 scripts/build-lessons.py
 export const LESSONS: Lesson[] = [
 """
     OUT.write_text(header + "\n".join(blocks) + "\n];\n", encoding="utf-8")
