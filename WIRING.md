@@ -57,7 +57,14 @@ If the node 404s or returns nothing, use an **HTTP Request** node with the same 
 
 **B. Crawl one shared folder (preferred if all plans sit in a single folder)**
 
-From Shared with me, **open that folder** until the address bar looks like `https://drive.google.com/drive/folders/<id>`. That `<id>` is `GOOGLE_DRIVE_FOLDER_ID`. Paste it on the Drive node (By ID or By URL). Do not paste `shared-with-me` as an ID.
+Get the ID:
+
+1. Sign in as `info@evergladesliteracy.org`.
+2. Open [Shared with me](https://drive.google.com/drive/shared-with-me).
+3. Double-click the lesson-plans **folder**.
+4. Copy the last segment of `https://drive.google.com/drive/folders/<id>`.
+
+That `<id>` is `GOOGLE_DRIVE_FOLDER_ID`. Paste it on the Drive node (By ID or By URL). If the bar still says `shared-with-me`, you have not opened a folder. Do not use a `/file/d/...` URL (that is a file, not a folder).
 
 ### 2. Finish the other n8n credentials
 

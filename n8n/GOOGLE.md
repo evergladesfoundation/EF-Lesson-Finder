@@ -41,9 +41,27 @@ GET https://www.googleapis.com/drive/v3/files
   fields=nextPageToken,files(id,name,mimeType,parents,modifiedTime)
 ```
 
-### Optional: one shared folder
+### How to get the folder ID
 
-If all plans live in a single folder, open it from Shared with me until the URL is `https://drive.google.com/drive/folders/<id>`. That `<id>` is `GOOGLE_DRIVE_FOLDER_ID`.
+`shared-with-me` has no ID. You only get an ID after you open a **folder**.
+
+1. Sign in to Drive as **`info@evergladesliteracy.org`**.
+2. Open [Shared with me](https://drive.google.com/drive/shared-with-me).
+3. **Double-click the lesson-plans folder** (the folder icon, not a PDF or Doc).
+4. Look at the address bar. It should look like:
+
+   `https://drive.google.com/drive/folders/1AbCDefGhijKLmNopqRSTuv`
+
+   The folder ID is the last segment: `1AbCDefGhijKLmNopqRSTuv`
+
+5. If the URL is still `/drive/shared-with-me`, you have not opened a folder yet — go back and click into the folder.
+
+**Other ways (same ID):**
+
+- Right-click the folder → **Share** → **Copy link**. The link is `https://drive.google.com/drive/folders/<id>?usp=share_link` — use the part between `/folders/` and `?`.
+- In n8n, Google Drive node → Folder → **From list** or **By URL** and paste that same link. n8n stores the ID; you do not have to type it.
+
+Do not use a **file** URL (`/file/d/<id>/view`) — that is a file ID and WF1 will 404 if it expects a folder.
 
 ---
 
