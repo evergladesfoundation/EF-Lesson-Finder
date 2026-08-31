@@ -1,0 +1,21 @@
+<!--
+  Everglades Lesson Finder — Wix Custom Code snippet
+
+  Wix dashboard → Settings → Custom Code → Add Custom Code
+    • Name: Everglades Lesson Finder
+    • Add Code to Pages: All pages
+    • Place Code in: Body – end
+    • Load code once
+
+  Requires a premium Wix plan with a connected domain.
+  Custom Code does not run inside the Wix editor — Publish, then view the live site.
+
+  Replace the src origin with your Worker URL after `npm run deploy`
+  (also printed on https://<worker>/wix.html).
+-->
+<script
+  src="https://lessonfinder.evergladesfoundation.workers.dev/widget.js"
+  data-elf-widget
+  data-elf-mode="float"
+  defer
+></script>

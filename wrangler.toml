@@ -1,0 +1,15 @@
+name = "lessonfinder"
+main = "src/worker.js"
+compatibility_date = "2026-07-16"
+
+[observability]
+enabled = true
+
+# Public config only. Put secrets in `.dev.vars` locally and
+# `npx wrangler secret put API_KEY` in production (`npm run secret:key`).
+[vars]
+# Published Google Sheet CSV export URL, e.g.
+# https://docs.google.com/spreadsheets/d/<id>/export?format=csv&gid=0
+# Leave empty to serve the bundled fallback catalog.
+SHEET_CSV_URL = ""
+ALLOWED_ORIGINS = "https://www.evergladesliteracy.org,https://evergladesliteracy.org,http://localhost:8787,http://127.0.0.1:8787"
