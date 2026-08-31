@@ -1,0 +1,95 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const offerings = [
+  {
+    title: 'PreK–12 Teacher Toolkit',
+    copy: 'Free, comprehensive Everglades lessons aligned with State Academic Standards.',
+    href: '/teacher-toolkit',
+    image: '/images/everglades-30.png',
+  },
+  {
+    title: 'Become a Champion School',
+    copy: 'Showcase exceptional Everglades literacy efforts across your school community.',
+    href: '/champions',
+    image: '/images/everglades-35.jpg',
+  },
+  {
+    title: 'Instructional Resources',
+    copy: 'Bite-sized, engaging supplemental lessons for classrooms and virtual learning.',
+    href: '/instructional-resources',
+    image: '/images/everglades-03.jpg',
+  },
+  {
+    title: 'Request Teacher Training',
+    copy: 'Coordinate free, STEM-based Everglades professional development for your school.',
+    href: '/getinvolved',
+    image: '/images/everglades-38.jpg',
+  },
+];
+---
+
+<Layout>
+  <section class="home-hero">
+    <div class="hero-image"></div>
+    <div class="hero-wash"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">The Everglades Foundation presents</p>
+      <h1><span>What is the</span> Everglades Literacy Program<sup>™</sup>?</h1>
+      <p>The Everglades Literacy Program empowers the next generation of conservation stewards by investing in teachers to drive cultural change within schools for the benefit of local and ecological communities.</p>
+      <a class="button" href="/about">Discover our mission</a>
+    </div>
+    <div class="hero-marker" aria-hidden="true">Scroll<br />to explore ↓</div>
+  </section>
+
+  <section class="intro-grid">
+    <div>
+      <p class="eyebrow dark">Why literacy matters</p>
+      <h2>The future of the Everglades rests on the shoulders of the next generation.</h2>
+    </div>
+    <div>
+      <p>As the vital efforts of Everglades restoration take center stage, long-term sustainability depends on the next generation understanding the ecological and economic value of the Everglades.</p>
+      <p>The program gives teachers the tools and knowledge to educate current and future generations.</p>
+    </div>
+  </section>
+
+  <section class="program-list" aria-label="What the program provides">
+    <p class="vertical-label">The program provides</p>
+    <ul>
+      <li><span>01</span> STEM-based professional development and Everglades Literacy Teacher Trainings.</li>
+      <li><span>02</span> Free lessons and materials for every teacher who attends a training.</li>
+      <li><span>03</span> A free online PreK–12 Teacher Toolkit with comprehensive lesson plans.</li>
+      <li><span>04</span> Additional instructional resources for classroom and virtual learning.</li>
+      <li><span>05</span> PreK–12 Everglades Champion Schools and classroom experiences.</li>
+    </ul>
+  </section>
+
+  <section class="offerings">
+    <div class="section-heading">
+      <p class="eyebrow dark">Discover the program</p>
+      <h2>Start teaching the Everglades.</h2>
+    </div>
+    <div class="card-grid">
+      {offerings.map((item) => (
+        <a class="program-card" href={item.href}>
+          <img src={item.image} alt="" />
+          <div>
+            <h3>{item.title}</h3>
+            <p>{item.copy}</p>
+            <span>Learn more →</span>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="partners">
+    <p class="eyebrow dark">We would like to thank</p>
+    <h2>Partners who support Everglades Literacy</h2>
+    <div>
+      <span>The Micky and Madeleine Arison Family Foundation</span>
+      <span>Gerald A. & Karen A. Kolschowsky Foundation</span>
+      <span>Glenn W. Bailey Foundation</span>
+    </div>
+  </section>
+</Layout>

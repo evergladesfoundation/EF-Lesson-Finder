@@ -1,0 +1,87 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Everglades Literacy Program',
+  description = 'Empowering the next generation of Everglades conservation stewards.',
+} = Astro.props;
+
+const path = Astro.url.pathname;
+const nav = [
+  { href: '/about', label: 'About' },
+  { href: '/teacher-toolkit', label: 'Teacher Toolkit' },
+  { href: '/instructional-resources', label: 'Resources' },
+  { href: '/champions', label: 'Champion Schools' },
+  { href: '/getinvolved', label: 'Get Involved' },
+  { href: '/faq', label: 'FAQ' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" />
+    <title>{title} | Everglades Literacy</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Everglades Literacy home">
+        <img src="/images/everglades-20.png" alt="The Everglades Foundation" />
+        <span>Everglades<br /><strong>Literacy</strong></span>
+      </a>
+      <button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false">Menu</button>
+      <nav aria-label="Main navigation">
+        {nav.map((item) => (
+          <a href={item.href} class:list={{ active: path.startsWith(item.href) }}>{item.label}</a>
+        ))}
+      </nav>
+      <a class="gift" href="https://www.evergladesliteracy.org/give" target="_blank" rel="noreferrer">Give a gift</a>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <div class="footer-grid">
+        <div>
+          <p class="footer-kicker">Education changes everything.</p>
+          <h2>Help the next generation understand and protect America’s Everglades.</h2>
+        </div>
+        <div>
+          <h3>Explore</h3>
+          <a href="/teacher-toolkit">Teacher Toolkit</a>
+          <a href="/champions">Champion Schools</a>
+          <a href="/getinvolved">Get Involved</a>
+          <a href="/faq">Frequently Asked Questions</a>
+        </div>
+        <div>
+          <h3>Contact</h3>
+          <p>(305) 251-0001</p>
+          <p>18001 Old Cutler Road, Suite 625<br />Palmetto Bay, Florida 33157</p>
+          <a href="https://www.facebook.com/EvergladesLiteracyProgram">Facebook</a>
+          <a href="https://www.youtube.com/channel/UCI58NbIhK8Rod0puba2zMZw">YouTube</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© {new Date().getFullYear()} The Everglades Foundation</span>
+        <a href="https://evergladesfoundation.org">EvergladesFoundation.org</a>
+      </div>
+    </footer>
+    <script>
+      const button = document.querySelector<HTMLButtonElement>('.menu-toggle');
+      const nav = document.querySelector<HTMLElement>('.site-header nav');
+      button?.addEventListener('click', () => {
+        const open = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!open));
+        nav?.classList.toggle('open');
+      });
+    </script>
+  </body>
+</html>
