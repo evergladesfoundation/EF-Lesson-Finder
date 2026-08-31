@@ -30,7 +30,9 @@ everglades-lesson-finder/
 ├── README.md                       ← you are here
 ├── wrangler.toml                   ← deploy config (Sheet URL, allowed origins)
 ├── package.json                    ← npm run dev / deploy / secret:key / screenshots
-├── src/worker.js                   ← the entire app
+├── src/
+│   ├── worker.js                   ← the entire app
+│   └── index.js                    ← Cloudflare entry (default-export only)
 ├── embed-snippet.html              ← paste into Wix Custom Code
 ├── data/master-index-template.csv  ← File → Import into Google Sheets
 ├── docs/

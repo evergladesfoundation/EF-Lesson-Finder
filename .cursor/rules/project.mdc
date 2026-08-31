@@ -14,6 +14,7 @@ README.md                  start here
 wrangler.toml              Sheet URL + allowed origins
 package.json               npm run dev / deploy / secret:key / screenshots
 src/worker.js              the entire app
+src/index.js               Cloudflare entry (default export only)
 embed-snippet.html         paste into Wix Custom Code
 data/master-index-template.csv
 docs/DEPLOYMENT.md

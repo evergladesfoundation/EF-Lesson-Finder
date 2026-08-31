@@ -60,7 +60,7 @@ async function main() {
   });
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
-  await page.waitForSelector("#everglades-lesson-finder-host");
+  await page.waitForSelector("#everglades-lesson-finder-host", { state: "attached" });
 
   await page.screenshot({ path: join(OUT_DIR, "launcher.png"), fullPage: false });
 
