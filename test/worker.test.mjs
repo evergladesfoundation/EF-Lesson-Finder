@@ -46,6 +46,29 @@ test("GET /wix.html fills the live origin", async () => {
   assert.match(html, /Custom Code/);
 });
 
+test("CORS reflects allowlisted origin and allows framing", async () => {
+  const res = await worker.fetch(
+    new Request("https://lessonfinder.test/api/lessons", {
+      headers: { Origin: "https://www.evergladesliteracy.org" },
+    }),
+    {
+      SHEET_CSV_URL: "",
+      ALLOWED_ORIGINS: "https://www.evergladesliteracy.org,https://evergladesliteracy.org",
+    },
+  );
+  assert.equal(res.headers.get("Access-Control-Allow-Origin"), "https://www.evergladesliteracy.org");
+  assert.match(res.headers.get("Content-Security-Policy") || "", /frame-ancestors \*/);
+  assert.equal(res.headers.get("X-Frame-Options"), null);
+});
+
+test("widget.js mounts on html and supports Wix modes", async () => {
+  const js = await (await call("/widget.js")).text();
+  assert.match(js, /document\.documentElement\.appendChild/);
+  assert.match(js, /everglades-lesson-finder/);
+  assert.match(js, /data-elf-mode/);
+  assert.match(js, /\/api\/search/);
+});
+
 test("POST /api/refresh requires API_KEY", async () => {
   const denied = await call("/api/refresh", { method: "POST" });
   assert.equal(denied.status, 401);
