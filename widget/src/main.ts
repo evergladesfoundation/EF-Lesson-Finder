@@ -1,5 +1,13 @@
 import styles from "./styles.css?inline";
 import { searchLessons } from "./search";
+import {
+  HOST_ID,
+  TAG_NAME,
+  demoLessonUrl,
+  detectMode,
+  shouldAutoMountFloat,
+  type EmbedMode,
+} from "./embed";
 import type { Lesson } from "./types";
 
 const QUICK_PROMPTS = [
@@ -14,14 +22,10 @@ const GREETING =
 
 // Real lesson pages/PDFs don't exist yet (Phase 1 data pipeline). Until then,
 // "View lesson" opens a static placeholder so stakeholders can see the click-through
-// working end to end. Resolved against the widget script's own origin (via
-// document.currentScript) so it still works once widget.js is served from a CDN.
-function demoLessonUrl(lesson: Lesson): string {
-  const scriptSrc = (document.currentScript as HTMLScriptElement | null)?.src;
-  const base = new URL(scriptSrc ?? location.href);
-  const url = new URL("lesson-plan-demo.html", base);
-  url.searchParams.set("title", lesson.title);
-  return url.toString();
+// working end to end. Resolved against the widget script's own origin so it still
+// works once widget.js is served from a CDN and injected by Wix Custom Code.
+function lessonHref(lesson: Lesson): string {
+  return demoLessonUrl(lesson.title);
 }
 
 function svgIcon(path: string, size = 24): SVGSVGElement {
@@ -47,12 +51,20 @@ class LessonFinderWidget {
   private body!: HTMLDivElement;
   private input!: HTMLInputElement;
   private chipsEl: HTMLDivElement | null = null;
+  private launcher!: HTMLButtonElement;
   private isOpen = false;
   private hasGreeted = false;
+  private readonly mode: EmbedMode;
 
-  constructor(host: HTMLElement) {
-    this.shadow = host.attachShadow({ mode: "open" });
-    this.render();
+  constructor(host: HTMLElement, mode: EmbedMode = "float") {
+    this.mode = mode;
+    this.shadow = host.shadowRoot ?? host.attachShadow({ mode: "open" });
+    if (this.shadow.childNodes.length === 0) {
+      this.render();
+    }
+    if (this.mode === "inline") {
+      this.toggle(true);
+    }
   }
 
   private render(): void {
@@ -61,11 +73,12 @@ class LessonFinderWidget {
     this.shadow.appendChild(style);
 
     const container = document.createElement("div");
-    container.className = "elf-root";
+    container.className = this.mode === "inline" ? "elf-root elf-inline" : "elf-root";
 
     const launcher = document.createElement("button");
     launcher.className = "elf-launcher";
     launcher.setAttribute("aria-label", "Open Everglades Lesson Finder");
+    launcher.setAttribute("aria-expanded", "false");
     launcher.style.color = "#faf9f2";
     launcher.appendChild(
       svgIcon(
@@ -73,6 +86,7 @@ class LessonFinderWidget {
       ),
     );
     launcher.addEventListener("click", () => this.toggle());
+    this.launcher = launcher;
 
     const panel = document.createElement("div");
     panel.className = "elf-panel";
@@ -133,6 +147,7 @@ class LessonFinderWidget {
   private toggle(force?: boolean): void {
     this.isOpen = force ?? !this.isOpen;
     this.panel.classList.toggle("elf-open", this.isOpen);
+    this.launcher.setAttribute("aria-expanded", String(this.isOpen));
     if (this.isOpen && !this.hasGreeted) {
       this.hasGreeted = true;
       this.addAssistantBubble(GREETING);
@@ -221,7 +236,7 @@ class LessonFinderWidget {
 
     const link = document.createElement("a");
     link.className = "elf-card-link";
-    link.href = demoLessonUrl(lesson);
+    link.href = lessonHref(lesson);
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.textContent = "View lesson →";
@@ -238,16 +253,73 @@ class LessonFinderWidget {
   }
 }
 
-function mount(): void {
-  if (document.getElementById("everglades-lesson-finder-host")) return;
+function applyFloatHostStyles(host: HTMLElement): void {
+  host.style.cssText = "position:relative;z-index:2147483000;";
+}
+
+function applyInlineHostStyles(host: HTMLElement): void {
+  host.style.cssText = "display:block;width:100%;height:100%;min-height:420px;";
+}
+
+function mountFloat(): void {
+  if (document.getElementById(HOST_ID) || document.querySelector(TAG_NAME)) return;
   const host = document.createElement("div");
-  host.id = "everglades-lesson-finder-host";
-  document.body.appendChild(host);
-  new LessonFinderWidget(host);
+  host.id = HOST_ID;
+  applyFloatHostStyles(host);
+  // Attach to <html>, not <body>. Wix wraps body content in transformed
+  // containers that would clip position:fixed and hide the launcher.
+  document.documentElement.appendChild(host);
+  new LessonFinderWidget(host, "float");
+}
+
+function mountInlineOnDocument(): void {
+  if (document.getElementById(HOST_ID) || document.querySelector(TAG_NAME)) return;
+  document.documentElement.style.height = "100%";
+  if (document.body) {
+    document.body.style.height = "100%";
+    document.body.style.margin = "0";
+  }
+  const host = document.createElement("div");
+  host.id = HOST_ID;
+  applyInlineHostStyles(host);
+  (document.body ?? document.documentElement).appendChild(host);
+  new LessonFinderWidget(host, "inline");
+}
+
+function boot(): void {
+  if (detectMode() === "inline") {
+    mountInlineOnDocument();
+    return;
+  }
+  if (shouldAutoMountFloat()) mountFloat();
+}
+
+function watchForWixNavigation(): void {
+  const observer = new MutationObserver(() => {
+    if (!shouldAutoMountFloat()) return;
+    if (document.getElementById(HOST_ID) || document.querySelector(TAG_NAME)) return;
+    mountFloat();
+  });
+  observer.observe(document.documentElement, { childList: true });
+}
+
+class EvergladesLessonFinderElement extends HTMLElement {
+  connectedCallback(): void {
+    document.getElementById(HOST_ID)?.remove();
+    applyInlineHostStyles(this);
+    if (this.shadowRoot?.childNodes.length) return;
+    new LessonFinderWidget(this, "inline");
+  }
+}
+
+if (!customElements.get(TAG_NAME)) {
+  customElements.define(TAG_NAME, EvergladesLessonFinderElement);
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", mount);
+  document.addEventListener("DOMContentLoaded", boot);
 } else {
-  mount();
+  boot();
 }
+
+watchForWixNavigation();

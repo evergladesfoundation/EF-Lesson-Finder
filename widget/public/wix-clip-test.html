@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wix clipping simulation — Lesson Finder</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #faf9f2;
+        font-family: -apple-system, "Segoe UI", sans-serif;
+      }
+      /* Wix wraps page content in transformed containers that clip fixed UI. */
+      .wix-page-group {
+        transform: translateZ(0);
+        overflow: hidden;
+        min-height: 100vh;
+        background: #fff;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 48px 24px 200px;
+        line-height: 1.55;
+        color: #16352a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wix-page-group">
+      <main>
+        <h1>Wix transformed container</h1>
+        <p>
+          This page mimics how Wix wraps site content. The Lesson Finder
+          launcher must still appear in the bottom-right corner because it
+          mounts on <code>&lt;html&gt;</code>, outside this clipping group.
+        </p>
+      </main>
+    </div>
+    <script src="./widget.js" defer data-elf-widget></script>
+  </body>
+</html>
