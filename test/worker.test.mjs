@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import worker, { FALLBACK_LESSONS } from "../src/worker.js";
+import worker, { getFallbackLessons } from "../src/worker.js";
+
+const FALLBACK_LESSONS = getFallbackLessons();
 
 const env = { SHEET_CSV_URL: "", ALLOWED_ORIGINS: "*", API_KEY: "test-key" };
 

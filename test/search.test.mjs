@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-  FALLBACK_LESSONS,
-  FUNDAMENTAL_CONCEPTS,
+  getFallbackLessons,
+  getFundamentalConcepts,
   conceptLabel,
   corsAllowOrigin,
   extractGrade,
@@ -15,6 +15,9 @@ import {
   parseSheetCsv,
   searchLessons,
 } from "../src/worker.js";
+
+const FALLBACK_LESSONS = getFallbackLessons();
+const FUNDAMENTAL_CONCEPTS = getFundamentalConcepts();
 
 describe("fallback catalog", () => {
   it("bundles 14 Active-style lessons", () => {

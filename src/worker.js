@@ -5,12 +5,12 @@
  * all live here. Named exports exist so `node:test` can import the helpers.
  */
 
-export const CACHE_TTL_MS = 5 * 60 * 1000;
-export const MAX_RESULTS = 4;
-export const STRONG_WORD_LENGTH = 7;
-export const MIN_KEYWORD_MATCHES = 2;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const MAX_RESULTS = 4;
+const STRONG_WORD_LENGTH = 7;
+const MIN_KEYWORD_MATCHES = 2;
 
-export const FUNDAMENTAL_CONCEPTS = {
+const FUNDAMENTAL_CONCEPTS = {
   1: "The Everglades is unique and valuable.",
   2: "The Everglades is defined and connected by water.",
   3: "The Everglades is shaped by southern Florida's geology and geography.",
@@ -39,7 +39,7 @@ const STOPWORDS = new Set([
 ]);
 
 /** Bundled catalog used when SHEET_CSV_URL is empty or the Sheet is unreachable. */
-export const FALLBACK_LESSONS = [
+const FALLBACK_LESSONS = [
   {
     id: "invasive-pythons-melaleuca",
     title: "Pythons & Melaleuca: Uninvited Guests",
@@ -238,6 +238,14 @@ export const FALLBACK_LESSONS = [
   },
 ];
 
+export function getFallbackLessons() {
+  return FALLBACK_LESSONS;
+}
+
+export function getFundamentalConcepts() {
+  return FUNDAMENTAL_CONCEPTS;
+}
+
 let catalogCache = { lessons: null, source: "fallback", fetchedAt: 0 };
 
 export function bustCatalogCache() {
@@ -423,7 +431,9 @@ function slugify(title) {
     .slice(0, 80);
 }
 
-export const lessonsFromCsv = parseSheetCsv;
+export function lessonsFromCsv(csv) {
+  return parseSheetCsv(csv);
+}
 
 export function parseSheetCsv(csv) {
   const rows = parseCsv(csv);
