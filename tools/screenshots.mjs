@@ -86,6 +86,11 @@ async function main() {
     const root = document.getElementById("everglades-lesson-finder-host")?.shadowRoot;
     return Boolean(root?.querySelector(".elf-card"));
   }, { timeout: 10000 });
+  await page.evaluate(() => {
+    const root = document.getElementById("everglades-lesson-finder-host")?.shadowRoot;
+    const card = root?.querySelector(".elf-card");
+    card?.scrollIntoView({ block: "nearest" });
+  });
   await page.waitForTimeout(400);
   await page.screenshot({ path: join(OUT_DIR, "results-cards.png"), fullPage: false });
 
