@@ -1,0 +1,8 @@
+# Copy to `.dev.vars` for local `wrangler dev`. Never commit `.dev.vars`.
+#
+# Protects POST /api/refresh. Leave blank to allow refresh without a key
+# (fine for local; set a real key before deploy).
+API_KEY=
+
+# Optional local override of wrangler.toml [vars] SHEET_CSV_URL
+# SHEET_CSV_URL=https://docs.google.com/spreadsheets/d/<id>/export?format=csv&gid=0

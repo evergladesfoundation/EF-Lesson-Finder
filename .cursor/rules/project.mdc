@@ -1,0 +1,63 @@
+---
+description: Everglades Lesson Finder — architecture, product, and change rules
+alwaysApply: true
+---
+
+# Everglades Lesson Finder
+
+This repo is a **single Cloudflare Worker**. The chat widget, search, Sheet fetch, CORS, and demo pages all live in `src/worker.js`. Read `README.md` first.
+
+## Layout (do not reintroduce the old Vite widget)
+
+```
+README.md                  start here
+wrangler.toml              Sheet URL + allowed origins
+package.json               npm run dev / deploy / secret:key / screenshots
+src/worker.js              the entire app
+embed-snippet.html         paste into Wix Custom Code
+data/master-index-template.csv
+docs/DEPLOYMENT.md
+docs/PROJECT.md
+tools/screenshots.mjs
+assets/                    screenshots (+ executive deck when provided)
+.cursor/rules/project.mdc  this file
+```
+
+Do **not** add `widget/`, Vite, TypeScript, n8n, or Supabase unless a human explicitly asks. The previous Vite IIFE widget was folded into `src/worker.js`.
+
+## Source of truth
+
+- The **Master Lesson Index** Google Sheet is the catalog. The worker fetches `SHEET_CSV_URL` as CSV and caches it (~5 minutes).
+- Only rows with `Status = Active` are searchable.
+- Human-authored columns (`Title of Lesson`, `Summary of Lesson`, `Standards (as published)`, `Fundamental Concepts`, `Topic Tags`) are **never overwritten** by this worker. The worker reads; it does not write the Sheet.
+- If the Sheet is missing, empty, or unreachable, serve the **bundled fallback catalog**. Teachers must still get answers — never an error wall.
+
+## Search
+
+Keep search **structured**: grade, NGSSS/VPK standard, then keywords. Do not replace it with an unconstrained LLM. Port logic lives in `searchLessons()` in `src/worker.js` (stopwords, strong-word length, scoring). Tests in `test/` cover this — update them when you change matching.
+
+## Widget / Wix
+
+- Shadow DOM isolation. Brand tokens: Cypress `#16352a`, Sawgrass `#7c9a4c`, Teal `#2e7d74`, Egret `#faf9f2`. Fonts: Bitter + Public Sans.
+- Floating launcher mounts on `<html>`, not `<body>` — Wix wraps body in transformed containers that clip `position:fixed`.
+- Remount if Wix client-side navigation removes the host.
+- Support `data-elf-mode="inline"` / iframe embed and `<everglades-lesson-finder>`.
+- CORS is origin-allowlisted in `wrangler.toml` (`ALLOWED_ORIGINS`). Keep `frame-ancestors *` so Wix can iframe install/preview pages.
+- Production embed snippet: `embed-snippet.html`. Install via Wix Settings → Custom Code, Body – end, all pages. Custom Code does not run in the Wix editor.
+
+## Secrets and config
+
+- `SHEET_CSV_URL` and `ALLOWED_ORIGINS` are wrangler `[vars]` (public).
+- `API_KEY` is a Worker secret (`npm run secret:key`). It gates `POST /api/refresh` only. Do not commit `.dev.vars`.
+- Worker name is `lessonfinder`. Do not rename it; Cloudflare deploy already uses it.
+
+## How to change things
+
+- New UI, routes, or search behavior: edit `src/worker.js` (export pure helpers so `test/*.test.mjs` can import them).
+- New Sheet columns: add aliases in the CSV mapper **and** a column on `data/master-index-template.csv`.
+- Deploy steps: `docs/DEPLOYMENT.md`. Product context: `docs/PROJECT.md`.
+- After visual changes, run `npm run screenshots` and commit updated `assets/screenshots/`.
+
+## Scope
+
+Stay inside this Lesson Finder. Do not expand into curriculum authoring, auth, analytics platforms, or a multi-file frontend unless asked.
