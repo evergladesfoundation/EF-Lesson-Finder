@@ -3,6 +3,7 @@
  *
  * Sheet fetch, structured search, widget JS, demo/Wix pages, and JSON APIs
  * all live here. Named exports exist so `node:test` can import the helpers.
+ * Export functions only — Cloudflare treats other named exports as handlers.
  */
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
