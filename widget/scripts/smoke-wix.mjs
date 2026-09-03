@@ -137,6 +137,40 @@ check(
 );
 
 await floatPage.evaluate(() => {
+  const host = document.getElementById("everglades-lesson-finder-host");
+  host?.shadowRoot?.querySelector(".elf-close")?.click();
+});
+const closed = await waitFor(floatPage, () => {
+  const host = document.getElementById("everglades-lesson-finder-host");
+  const root = host?.shadowRoot;
+  if (!root || root.querySelector(".elf-panel.elf-open")) return null;
+  return {
+    bodyEmpty: (root.querySelector(".elf-body")?.childElementCount ?? -1) === 0,
+  };
+});
+check("closing the panel clears the conversation", closed.bodyEmpty);
+
+await floatPage.evaluate(() => {
+  const host = document.getElementById("everglades-lesson-finder-host");
+  host?.shadowRoot?.querySelector(".elf-launcher")?.click();
+});
+const reopened = await waitFor(floatPage, () => {
+  const host = document.getElementById("everglades-lesson-finder-host");
+  const root = host?.shadowRoot;
+  if (!root?.querySelector(".elf-panel.elf-open")) return null;
+  return {
+    greeting: root.querySelector(".elf-assistant")?.textContent ?? "",
+    chips: root.querySelectorAll(".elf-chip").length,
+    cards: root.querySelectorAll(".elf-card").length,
+    bubbles: root.querySelectorAll(".elf-bubble").length,
+  };
+});
+check("reopening shows the greeting again", reopened.greeting.includes("Everglades Literacy"));
+check("reopening restores the quick prompts", reopened.chips === 4);
+check("reopening does not keep prior lesson cards", reopened.cards === 0);
+check("reopening starts from a fresh transcript", reopened.bubbles === 1);
+
+await floatPage.evaluate(() => {
   document.getElementById("everglades-lesson-finder-host")?.remove();
 });
 const remounted = await waitFor(floatPage, () => {

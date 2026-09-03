@@ -147,7 +147,13 @@ class LessonFinderWidget {
   }
 
   private toggle(force?: boolean): void {
-    this.isOpen = force ?? !this.isOpen;
+    const nextOpen = force ?? !this.isOpen;
+    // Closing clears the transcript so the next open is always the greeting
+    // + quick prompts, not the previous search results.
+    if (!nextOpen && this.isOpen) {
+      this.resetConversation();
+    }
+    this.isOpen = nextOpen;
     this.panel.classList.toggle("elf-open", this.isOpen);
     this.launcher.setAttribute("aria-expanded", String(this.isOpen));
     if (this.isOpen && !this.hasGreeted) {
@@ -156,6 +162,13 @@ class LessonFinderWidget {
       this.renderQuickPrompts();
     }
     if (this.isOpen) this.input.focus();
+  }
+
+  private resetConversation(): void {
+    this.body.replaceChildren();
+    this.chipsEl = null;
+    this.hasGreeted = false;
+    this.input.value = "";
   }
 
   private renderQuickPrompts(): void {
