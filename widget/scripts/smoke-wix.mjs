@@ -131,7 +131,10 @@ const search = await waitFor(floatPage, () => {
   };
 });
 check("quick prompt returns lesson cards", search.count > 0);
-check("invasive-species prompt finds Pythons lesson", search.title.includes("Pythons"));
+check(
+  "invasive-species prompt finds Grade 5 Invasive Species lesson",
+  search.title.includes("Invasive Species"),
+);
 
 await floatPage.evaluate(() => {
   document.getElementById("everglades-lesson-finder-host")?.remove();
