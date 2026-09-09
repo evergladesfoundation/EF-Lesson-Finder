@@ -7,7 +7,6 @@
   },
   "assets": {
     "directory": "widget/dist",
-    "binding": "ASSETS",
-    "run_worker_first": true
+    "binding": "ASSETS"
   }
 }
