@@ -302,11 +302,6 @@ class LessonFinderWidget {
     const card = document.createElement("div");
     card.className = "elf-card";
 
-    const photo = document.createElement("div");
-    photo.className = "elf-card-photo";
-    photo.setAttribute("aria-hidden", "true");
-    photo.textContent = "lesson photo";
-
     const content = document.createElement("div");
     content.className = "elf-card-body";
 
@@ -374,7 +369,7 @@ class LessonFinderWidget {
 
     footer.append(standard, links);
     content.append(top, summary, footer);
-    card.append(photo, content);
+    card.append(content);
     this.body.appendChild(card);
   }
 
