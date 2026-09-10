@@ -138,9 +138,10 @@ assert(
 );
 assert(mainSrc.includes("lessonMaterialsFolderUrl"), "folder helper is not used in main.ts");
 assert(
-  mainSrc.includes('elf-card-link-materials') &&
+  mainSrc.includes("elf-card-link-materials") &&
+    mainSrc.includes("elf-card-footer-primary") &&
     readFileSync(path.join(widgetRoot, "src/styles.css"), "utf8").includes(".elf-card-link-materials"),
-  "materials link needs a dedicated footer row class in CSS",
+  "materials link needs a dedicated footer row under View/Download",
 );
 
 for (const lesson of LESSONS) {

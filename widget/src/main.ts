@@ -259,6 +259,9 @@ class LessonFinderWidget {
     const footer = document.createElement("div");
     footer.className = "elf-card-footer";
 
+    const primary = document.createElement("div");
+    primary.className = "elf-card-footer-primary";
+
     const standard = document.createElement("span");
     standard.className = "elf-standard";
     standard.textContent = lesson.ngsssStandards.join(", ");
@@ -290,7 +293,8 @@ class LessonFinderWidget {
       links.appendChild(downloadLink);
     }
 
-    footer.append(standard, links);
+    primary.append(standard, links);
+    footer.appendChild(primary);
 
     const folderHref = lessonMaterialsFolderUrl(lesson);
     if (folderHref) {
