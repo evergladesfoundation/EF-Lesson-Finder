@@ -50,7 +50,7 @@ export function lessonPlanDownloadUrl(lesson: Pick<Lesson, "pdfUrl">): string {
 }
 
 /**
- * Href for "View all lesson materials": the catalog Drive folder.
+ * Href for "All materials →": the catalog Drive folder.
  * Empty when lessonUrl is missing or is not an https Drive folder URL.
  */
 export function lessonMaterialsFolderUrl(lesson: Pick<Lesson, "lessonUrl">): string {

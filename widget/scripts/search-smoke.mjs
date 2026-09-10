@@ -133,14 +133,20 @@ assert(
   mainSrc.includes("We're Online!") && mainSrc.includes("How may I help you today?"),
   "launcher greeting is missing from main.ts",
 );
-assert(mainSrc.includes("View lesson →"), "View lesson label is missing from main.ts");
+assert(mainSrc.includes("View lesson"), "View lesson label is missing from main.ts");
 assert(mainSrc.includes("Download"), "Download label is missing from main.ts");
 assert(
-  mainSrc.includes("View all lesson materials"),
-  "View all lesson materials label is missing from main.ts",
+  mainSrc.includes("All materials →"),
+  "All materials → label is missing from main.ts",
 );
+assert(!mainSrc.includes("View all lesson materials"), "old materials label should be gone");
+assert(!mainSrc.includes("elf-grass"), "sawgrass zigzag edge should be removed");
+assert(mainSrc.includes("Teacher Toolkit"), "header kicker is missing from main.ts");
+assert(mainSrc.includes("Find a lesson"), "launcher pill label is missing from main.ts");
+assert(mainSrc.includes('setAttribute("aria-label", "Send")'), "send aria-label is missing");
 assert(mainSrc.includes("lessonMaterialsFolderUrl"), "folder helper is not used in main.ts");
 const footerCss = readFileSync(path.join(widgetRoot, "src/styles.css"), "utf8");
+assert(footerCss.includes("Newsreader"), "Newsreader font is missing from styles.css");
 assert(!mainSrc.includes("elf-card-footer-primary"), "footer primary row should be gone so links are not beside standards");
 assert(
   /footer\.append\(\s*standard,\s*links\s*\)/.test(mainSrc),
