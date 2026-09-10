@@ -167,6 +167,16 @@ assert(
 );
 assert(mainSrc.includes("AP Unit Title >"), "lesson cards must prefix mapped AP units with AP Unit Title >");
 assert(mainSrc.includes("elf-ap-unit"), "AP unit line class is missing from main.ts");
+const apUnitCss = footerCss.match(/\.elf-ap-unit\s*\{[^}]+\}/)?.[0] ?? "";
+assert(Boolean(apUnitCss), ".elf-ap-unit rule is missing");
+assert(
+  /color:\s*#3a4f48/.test(apUnitCss),
+  "AP unit title must use a darker green (#3a4f48) so it reads on the cream card",
+);
+assert(
+  !/#5f746c/.test(apUnitCss),
+  "AP unit title must not keep the muted #5f746c color",
+);
 assert(
   /apUnitTitles\.length\s*>\s*0/.test(mainSrc),
   "AP unit line must be omitted when a lesson has no mapped AP units",
