@@ -143,10 +143,23 @@ assert(!mainSrc.includes("View all lesson materials"), "old materials label shou
 assert(!mainSrc.includes("elf-grass"), "sawgrass zigzag edge should be removed");
 assert(mainSrc.includes("Teacher Toolkit"), "header kicker is missing from main.ts");
 assert(mainSrc.includes("Find a lesson"), "launcher pill label is missing from main.ts");
+assert(!mainSrc.includes("lesson photo"), "lesson photo placeholder must be removed from list rows");
+assert(!mainSrc.includes("elf-card-photo"), "elf-card-photo cell must be removed from list rows");
+assert(/card\.append\(\s*content\s*\)/.test(mainSrc), "lesson card must append content only, with no photo cell");
 assert(mainSrc.includes('setAttribute("aria-label", "Send")'), "send aria-label is missing");
 assert(mainSrc.includes("lessonMaterialsFolderUrl"), "folder helper is not used in main.ts");
 const footerCss = readFileSync(path.join(widgetRoot, "src/styles.css"), "utf8");
 assert(footerCss.includes("Newsreader"), "Newsreader font is missing from styles.css");
+assert(!footerCss.includes("elf-card-photo"), "photo slot styles must be removed");
+assert(
+  !/grid-template-columns:\s*64px/.test(footerCss),
+  ".elf-card must not keep a 64px photo grid column",
+);
+const cardCss = footerCss.match(/\.elf-card\s*\{[^}]+\}/)?.[0] ?? "";
+assert(
+  /flex-direction:\s*column/.test(cardCss) && !/grid-template-columns/.test(cardCss),
+  ".elf-card layout must be a single column",
+);
 assert(!mainSrc.includes("elf-card-footer-primary"), "footer primary row should be gone so links are not beside standards");
 assert(
   /footer\.append\(\s*standard,\s*links\s*\)/.test(mainSrc),
