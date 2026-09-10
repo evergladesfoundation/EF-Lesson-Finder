@@ -432,8 +432,14 @@ assert(
 
 const landWater = searchLessons("land and water use");
 assert(
-  landWater.lessons.some((l) => l.title === "Tragedy of the Commons"),
-  `land and water use should find Tragedy of the Commons, got: ${landWater.lessons.map((l) => l.title).join("; ")}`,
+  landWater.lessons.some((l) => l.apUnitTitles.includes("Land and Water Use")),
+  `land and water use should hit AP-mapped lessons, got: ${landWater.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const apUnit5 = searchLessons("APES unit 5");
+assert(
+  apUnit5.lessons.some((l) => l.title === "Tragedy of the Commons"),
+  `APES unit 5 should include Tragedy of the Commons, got: ${apUnit5.lessons.map((l) => l.title).join("; ")}`,
 );
 
 if (failures.length) {

@@ -189,7 +189,7 @@ export function searchLessons(query: string): ChatReply {
   const keywordHits = scored.filter((s) => s.score > 0);
   const ranked = (keywordHits.length > 0 ? keywordHits : grade !== null ? scored : [])
     .sort((a, b) => b.score - a.score);
-  const cap = gradeOnly || (grade !== null && keywordHits.length === 0)
+  const cap = gradeOnly || (grade !== null && keywordHits.length === 0) || apUnit !== null
     ? MAX_GRADE_RESULTS
     : MAX_TOPIC_RESULTS;
   const matches = ranked.slice(0, cap).map((s) => s.lesson);
