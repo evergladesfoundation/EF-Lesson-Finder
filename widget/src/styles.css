@@ -33,6 +33,7 @@
   justify-content: center;
   box-shadow: var(--shadow);
   z-index: 2147483000;
+  pointer-events: auto;
   transition: transform 0.15s ease;
 }
 
@@ -43,6 +44,48 @@
 .elf-launcher svg {
   width: 28px;
   height: 28px;
+}
+
+.elf-greeting {
+  position: fixed;
+  right: 96px;
+  bottom: 28px;
+  max-width: min(240px, calc(100vw - 130px));
+  background: #ffffff;
+  color: var(--cypress);
+  border-radius: 16px;
+  padding: 12px 36px 12px 14px;
+  box-shadow: var(--shadow);
+  z-index: 2147483000;
+  pointer-events: auto;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+.elf-greeting[hidden] {
+  display: none;
+}
+
+.elf-greeting p {
+  margin: 0;
+}
+
+.elf-greeting-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  line-height: 0;
+}
+
+.elf-greeting-close:hover {
+  color: var(--cypress);
 }
 
 .elf-panel {
@@ -61,13 +104,16 @@
   overflow: hidden;
   z-index: 2147483000;
   opacity: 0;
+  /* Hide the closed panel so it cannot intercept clicks next to the launcher. */
+  visibility: hidden;
   transform: translateY(12px) scale(0.98);
   pointer-events: none;
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
 }
 
 .elf-panel.elf-open {
   opacity: 1;
+  visibility: visible;
   transform: translateY(0) scale(1);
   pointer-events: auto;
 }
@@ -239,6 +285,13 @@
   font-weight: 600;
 }
 
+.elf-card-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 .elf-card-link {
   font-size: 13px;
   font-weight: 600;
@@ -249,6 +302,11 @@
 
 .elf-card-link:hover {
   text-decoration: underline;
+}
+
+.elf-card-link[aria-disabled="true"] {
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 .elf-inputrow {
@@ -309,5 +367,10 @@
   .elf-launcher {
     right: 16px;
     bottom: 16px;
+  }
+
+  .elf-greeting {
+    right: 84px;
+    bottom: 20px;
   }
 }

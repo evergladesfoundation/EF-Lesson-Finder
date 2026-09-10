@@ -1,6 +1,9 @@
 import styles from "./styles.css?inline";
+import { lessonPlanDownloadUrl, lessonPlanViewUrl } from "./lessonUrls";
 import { searchLessons } from "./search";
 import type { Lesson } from "./types";
+
+export { lessonPlanDownloadUrl, lessonPlanViewUrl } from "./lessonUrls";
 
 const QUICK_PROMPTS = [
   "Show me 4th grade lessons",
@@ -12,13 +15,19 @@ const QUICK_PROMPTS = [
 const GREETING =
   "Hi! I can help you find Everglades Literacy lessons by topic, grade level, NGSSS standard, or Fundamental Concept. What are you looking for?";
 
-function lessonPlanUrl(lesson: Lesson): string {
-  const pdf = lesson.pdfUrl.trim();
-  const folder = lesson.lessonUrl.trim();
-  if (pdf.startsWith("https://")) return pdf;
-  if (folder.startsWith("https://")) return folder;
-  return "";
-}
+const LAUNCHER_GREETING = "We're Online! How may I help you today?";
+
+const HOST_LIGHT_CSS = `#everglades-lesson-finder-host {
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  pointer-events: none;
+  background: transparent;
+}`;
 
 function svgIcon(path: string, size = 24): SVGSVGElement {
   const ns = "http://www.w3.org/2000/svg";
@@ -42,9 +51,11 @@ class LessonFinderWidget {
   private panel!: HTMLDivElement;
   private body!: HTMLDivElement;
   private input!: HTMLInputElement;
+  private greetingEl!: HTMLDivElement;
   private chipsEl: HTMLDivElement | null = null;
   private isOpen = false;
   private hasGreeted = false;
+  private greetingDismissed = false;
 
   constructor(host: HTMLElement) {
     this.shadow = host.attachShadow({ mode: "open" });
@@ -69,6 +80,25 @@ class LessonFinderWidget {
       ),
     );
     launcher.addEventListener("click", () => this.toggle());
+
+    const greeting = document.createElement("div");
+    greeting.className = "elf-greeting";
+    greeting.setAttribute("role", "status");
+    const greetingText = document.createElement("p");
+    greetingText.textContent = LAUNCHER_GREETING;
+    const greetingClose = document.createElement("button");
+    greetingClose.type = "button";
+    greetingClose.className = "elf-greeting-close";
+    greetingClose.setAttribute("aria-label", "Dismiss greeting");
+    greetingClose.appendChild(svgIcon("M18 6 6 18M6 6l12 12", 14));
+    greetingClose.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.greetingDismissed = true;
+      this.syncGreeting();
+    });
+    greeting.append(greetingText, greetingClose);
+    greeting.addEventListener("click", () => this.toggle(true));
+    this.greetingEl = greeting;
 
     const panel = document.createElement("div");
     panel.className = "elf-panel";
@@ -122,13 +152,21 @@ class LessonFinderWidget {
     });
 
     panel.append(header, grass, body, form);
-    container.append(launcher, panel);
+    container.append(greeting, launcher, panel);
     this.shadow.appendChild(container);
+    this.syncGreeting();
+  }
+
+  private syncGreeting(): void {
+    const show = !this.isOpen && !this.greetingDismissed;
+    this.greetingEl.hidden = !show;
+    this.greetingEl.setAttribute("aria-hidden", show ? "false" : "true");
   }
 
   private toggle(force?: boolean): void {
     this.isOpen = force ?? !this.isOpen;
     this.panel.classList.toggle("elf-open", this.isOpen);
+    this.syncGreeting();
     if (this.isOpen && !this.hasGreeted) {
       this.hasGreeted = true;
       this.addAssistantBubble(GREETING);
@@ -215,19 +253,34 @@ class LessonFinderWidget {
     standard.className = "elf-standard";
     standard.textContent = lesson.ngsssStandards.join(", ");
 
-    const link = document.createElement("a");
-    link.className = "elf-card-link";
-    const href = lessonPlanUrl(lesson);
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.textContent = "View lesson →";
-    if (href.startsWith("https://")) {
-      link.href = href;
+    const links = document.createElement("div");
+    links.className = "elf-card-links";
+
+    const viewLink = document.createElement("a");
+    viewLink.className = "elf-card-link";
+    const viewHref = lessonPlanViewUrl(lesson);
+    viewLink.target = "_blank";
+    viewLink.rel = "noopener noreferrer";
+    viewLink.textContent = "View lesson";
+    if (viewHref.startsWith("https://")) {
+      viewLink.href = viewHref;
     } else {
-      link.setAttribute("aria-disabled", "true");
+      viewLink.setAttribute("aria-disabled", "true");
+    }
+    links.appendChild(viewLink);
+
+    const downloadHref = lessonPlanDownloadUrl(lesson);
+    if (downloadHref) {
+      const downloadLink = document.createElement("a");
+      downloadLink.className = "elf-card-link";
+      downloadLink.target = "_blank";
+      downloadLink.rel = "noopener noreferrer";
+      downloadLink.textContent = "Download";
+      downloadLink.href = downloadHref;
+      links.appendChild(downloadLink);
     }
 
-    footer.append(standard, link);
+    footer.append(standard, links);
     card.append(top, summary, footer);
     this.body.appendChild(card);
   }
@@ -241,6 +294,12 @@ class LessonFinderWidget {
 
 function mount(): void {
   if (document.getElementById("everglades-lesson-finder-host")) return;
+  if (!document.getElementById("everglades-lesson-finder-host-css")) {
+    const hostCss = document.createElement("style");
+    hostCss.id = "everglades-lesson-finder-host-css";
+    hostCss.textContent = HOST_LIGHT_CSS;
+    document.documentElement.appendChild(hostCss);
+  }
   const host = document.createElement("div");
   host.id = "everglades-lesson-finder-host";
   document.body.appendChild(host);

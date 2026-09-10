@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -17,25 +17,27 @@ try {
   esbuildBin = path.join(widgetRoot, "node_modules/esbuild/bin/esbuild");
 }
 
-const outfile = path.join(mkdtempSync(path.join(tmpdir(), "elf-search-")), "search.mjs");
-const bundled = spawnSync(
-  esbuildBin,
-  [
-    path.join(widgetRoot, "src/search.ts"),
-    "--bundle",
-    "--format=esm",
-    "--platform=neutral",
-    `--outfile=${outfile}`,
-  ],
-  { encoding: "utf8" },
-);
+const tmp = mkdtempSync(path.join(tmpdir(), "elf-search-"));
+const outfile = path.join(tmp, "search.mjs");
+const urlOutfile = path.join(tmp, "lessonUrls.mjs");
 
-if (bundled.status !== 0) {
-  console.error(bundled.stderr || bundled.stdout);
-  process.exit(bundled.status ?? 1);
+function bundle(entry, dest) {
+  const bundled = spawnSync(
+    esbuildBin,
+    [entry, "--bundle", "--format=esm", "--platform=neutral", `--outfile=${dest}`],
+    { encoding: "utf8" },
+  );
+  if (bundled.status !== 0) {
+    console.error(bundled.stderr || bundled.stdout);
+    process.exit(bundled.status ?? 1);
+  }
 }
 
+bundle(path.join(widgetRoot, "src/search.ts"), outfile);
+bundle(path.join(widgetRoot, "src/lessonUrls.ts"), urlOutfile);
+
 const { LESSONS, extractGrade, searchLessons } = await import(pathToFileURL(outfile).href);
+const { lessonPlanDownloadUrl, lessonPlanViewUrl } = await import(pathToFileURL(urlOutfile).href);
 
 const failures = [];
 
@@ -60,6 +62,74 @@ assert(
   LESSONS.every((l) => !l.pdfUrl.includes("lesson-plan-demo") && !l.lessonUrl.includes("lesson-plan-demo")),
   "catalog must not point at lesson-plan-demo.html",
 );
+assert(
+  LESSONS.some((l) => l.pdfUrl.includes("export=download")),
+  "catalog pdfUrl may stay as Drive download; the UI helper rewrites View lesson",
+);
+
+const sampleDownload = {
+  pdfUrl: "https://drive.google.com/uc?export=download&id=15HOjNaBiNJ2E7UZM-s5GJmKtcPOjy8uI",
+  lessonUrl: "https://drive.google.com/drive/folders/1xOgP3K4Ep4Nn0W3uTlF6RXFd-pN2yH7Q",
+};
+const sampleView = lessonPlanViewUrl(sampleDownload);
+assert(
+  sampleView === "https://drive.google.com/file/d/15HOjNaBiNJ2E7UZM-s5GJmKtcPOjy8uI/view",
+  `download pdfUrl should become a Drive view URL, got: ${sampleView}`,
+);
+assert(!sampleView.includes("export=download"), "View lesson helper must not use export=download");
+
+const folderOnly = lessonPlanViewUrl({
+  pdfUrl: "",
+  lessonUrl: "https://drive.google.com/drive/folders/1gHYfIM6Tmrln1MsyNqs3EUT9BaNC52TF",
+});
+assert(
+  folderOnly === "https://drive.google.com/drive/folders/1gHYfIM6Tmrln1MsyNqs3EUT9BaNC52TF",
+  `missing pdfUrl should fall back to lessonUrl folder, got: ${folderOnly}`,
+);
+
+const alreadyView = lessonPlanViewUrl({
+  pdfUrl: "https://drive.google.com/file/d/abc123/view",
+  lessonUrl: "",
+});
+assert(
+  alreadyView === "https://drive.google.com/file/d/abc123/view",
+  `existing /file/d/ view URL should be preserved, got: ${alreadyView}`,
+);
+
+assert(
+  lessonPlanDownloadUrl(sampleDownload) === sampleDownload.pdfUrl,
+  "Download should use the catalog pdfUrl export=download link",
+);
+assert(
+  lessonPlanDownloadUrl({ pdfUrl: "" }) === "",
+  "Download should be hidden when pdfUrl is empty",
+);
+
+const mainSrc = readFileSync(path.join(widgetRoot, "src/main.ts"), "utf8");
+assert(
+  mainSrc.includes("We're Online! How may I help you today?"),
+  "launcher greeting is missing from main.ts",
+);
+assert(mainSrc.includes("View lesson"), "View lesson label is missing from main.ts");
+assert(mainSrc.includes("Download"), "Download label is missing from main.ts");
+
+for (const lesson of LESSONS) {
+  const href = lessonPlanViewUrl(lesson);
+  assert(href.startsWith("https://"), `View lesson href missing for ${lesson.id}: ${href}`);
+  assert(
+    !/export=download/i.test(href),
+    `View lesson href must not force download (${lesson.id}): ${href}`,
+  );
+  const download = lessonPlanDownloadUrl(lesson);
+  if (lesson.pdfUrl.trim()) {
+    assert(
+      download.includes("export=download") || download.startsWith("https://"),
+      `Download href missing for ${lesson.id}: ${download}`,
+    );
+  } else {
+    assert(download === "", `Download should be empty without pdfUrl (${lesson.id})`);
+  }
+}
 
 assert(extractGrade("lessons that talk about the water cycle") === null, 'extractGrade("talk about the water cycle") should be null');
 assert(extractGrade("kindergarten") === 0, 'extractGrade("kindergarten") should be 0');
