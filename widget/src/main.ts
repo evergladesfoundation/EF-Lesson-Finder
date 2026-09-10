@@ -1,9 +1,17 @@
 import styles from "./styles.css?inline";
-import { lessonPlanDownloadUrl, lessonPlanViewUrl } from "./lessonUrls";
+import {
+  lessonMaterialsFolderUrl,
+  lessonPlanDownloadUrl,
+  lessonPlanViewUrl,
+} from "./lessonUrls";
 import { searchLessons } from "./search";
 import type { Lesson } from "./types";
 
-export { lessonPlanDownloadUrl, lessonPlanViewUrl } from "./lessonUrls";
+export {
+  lessonMaterialsFolderUrl,
+  lessonPlanDownloadUrl,
+  lessonPlanViewUrl,
+} from "./lessonUrls";
 
 const QUICK_PROMPTS = [
   "Show me 4th grade lessons",
@@ -251,6 +259,9 @@ class LessonFinderWidget {
     const footer = document.createElement("div");
     footer.className = "elf-card-footer";
 
+    const primary = document.createElement("div");
+    primary.className = "elf-card-footer-primary";
+
     const standard = document.createElement("span");
     standard.className = "elf-standard";
     standard.textContent = lesson.ngsssStandards.join(", ");
@@ -282,7 +293,19 @@ class LessonFinderWidget {
       links.appendChild(downloadLink);
     }
 
-    footer.append(standard, links);
+    primary.append(standard, links);
+    footer.appendChild(primary);
+
+    const folderHref = lessonMaterialsFolderUrl(lesson);
+    if (folderHref) {
+      const folderLink = document.createElement("a");
+      folderLink.className = "elf-card-link elf-card-link-materials";
+      folderLink.target = "_blank";
+      folderLink.rel = "noopener noreferrer";
+      folderLink.textContent = "View all lesson materials";
+      folderLink.href = folderHref;
+      footer.appendChild(folderLink);
+    }
     card.append(top, summary, footer);
     this.body.appendChild(card);
   }

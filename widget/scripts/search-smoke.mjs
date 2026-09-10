@@ -37,7 +37,9 @@ bundle(path.join(widgetRoot, "src/search.ts"), outfile);
 bundle(path.join(widgetRoot, "src/lessonUrls.ts"), urlOutfile);
 
 const { LESSONS, extractGrade, searchLessons } = await import(pathToFileURL(outfile).href);
-const { lessonPlanDownloadUrl, lessonPlanViewUrl } = await import(pathToFileURL(urlOutfile).href);
+const { lessonMaterialsFolderUrl, lessonPlanDownloadUrl, lessonPlanViewUrl } = await import(
+  pathToFileURL(urlOutfile).href
+);
 
 const failures = [];
 
@@ -105,6 +107,24 @@ assert(
   "Download should be hidden when pdfUrl is empty",
 );
 
+const sampleFolder = lessonMaterialsFolderUrl(sampleDownload);
+assert(
+  sampleFolder === sampleDownload.lessonUrl,
+  `folder helper should return the Drive folder URL, got: ${sampleFolder}`,
+);
+assert(
+  /drive\.google\.com\/drive\/folders\//.test(sampleFolder),
+  `folder helper should be a Drive folder URL, got: ${sampleFolder}`,
+);
+assert(
+  lessonMaterialsFolderUrl({ lessonUrl: "" }) === "",
+  "folder link should be hidden when lessonUrl is empty",
+);
+assert(
+  lessonMaterialsFolderUrl({ lessonUrl: "https://example.com/not-a-folder" }) === "",
+  "folder link should be hidden when lessonUrl is not a Drive folder",
+);
+
 const mainSrc = readFileSync(path.join(widgetRoot, "src/main.ts"), "utf8");
 assert(
   mainSrc.includes("We're Online!") && mainSrc.includes("How may I help you today?"),
@@ -112,6 +132,17 @@ assert(
 );
 assert(mainSrc.includes("View lesson →"), "View lesson label is missing from main.ts");
 assert(mainSrc.includes("Download"), "Download label is missing from main.ts");
+assert(
+  mainSrc.includes("View all lesson materials"),
+  "View all lesson materials label is missing from main.ts",
+);
+assert(mainSrc.includes("lessonMaterialsFolderUrl"), "folder helper is not used in main.ts");
+assert(
+  mainSrc.includes("elf-card-link-materials") &&
+    mainSrc.includes("elf-card-footer-primary") &&
+    readFileSync(path.join(widgetRoot, "src/styles.css"), "utf8").includes(".elf-card-link-materials"),
+  "materials link needs a dedicated footer row under View/Download",
+);
 
 for (const lesson of LESSONS) {
   const href = lessonPlanViewUrl(lesson);
@@ -128,6 +159,21 @@ for (const lesson of LESSONS) {
     );
   } else {
     assert(download === "", `Download should be empty without pdfUrl (${lesson.id})`);
+  }
+  const folder = lessonMaterialsFolderUrl(lesson);
+  if (lesson.lessonUrl.trim()) {
+    assert(
+      folder === lesson.lessonUrl.trim() && /drive\.google\.com\/drive\/folders\//.test(folder),
+      `folder href missing or not a Drive folder for ${lesson.id}: ${folder}`,
+    );
+    if (download) {
+      assert(folder !== download, `folder href must differ from Download (${lesson.id})`);
+    }
+    if (/\/file\/d\//.test(href)) {
+      assert(folder !== href, `folder href must differ from View lesson (${lesson.id})`);
+    }
+  } else {
+    assert(folder === "", `folder link should be empty without lessonUrl (${lesson.id})`);
   }
 }
 

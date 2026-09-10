@@ -48,3 +48,14 @@ export function lessonPlanDownloadUrl(lesson: Pick<Lesson, "pdfUrl">): string {
   const pdf = lesson.pdfUrl.trim();
   return pdf.startsWith("https://") ? pdf : "";
 }
+
+/**
+ * Href for "View all lesson materials": the catalog Drive folder.
+ * Empty when lessonUrl is missing or is not an https Drive folder URL.
+ */
+export function lessonMaterialsFolderUrl(lesson: Pick<Lesson, "lessonUrl">): string {
+  const folder = lesson.lessonUrl.trim();
+  if (!folder.startsWith("https://")) return "";
+  if (!/drive\.google\.com\/drive\/folders\//i.test(folder)) return "";
+  return folder;
+}
