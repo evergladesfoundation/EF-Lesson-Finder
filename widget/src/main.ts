@@ -273,9 +273,6 @@ class LessonFinderWidget {
     const footer = document.createElement("div");
     footer.className = "elf-card-footer";
 
-    const primary = document.createElement("div");
-    primary.className = "elf-card-footer-primary";
-
     const standard = document.createElement("span");
     standard.className = "elf-standard";
     standard.textContent = lesson.ngsssStandards.join(", ");
@@ -307,19 +304,18 @@ class LessonFinderWidget {
       links.appendChild(downloadLink);
     }
 
-    primary.append(standard, links);
-    footer.appendChild(primary);
-
     const folderHref = lessonMaterialsFolderUrl(lesson);
     if (folderHref) {
       const folderLink = document.createElement("a");
-      folderLink.className = "elf-card-link elf-card-link-materials";
+      folderLink.className = "elf-card-link";
       folderLink.target = "_blank";
       folderLink.rel = "noopener noreferrer";
       folderLink.textContent = "View all lesson materials";
       folderLink.href = folderHref;
-      footer.appendChild(folderLink);
+      links.appendChild(folderLink);
     }
+
+    footer.append(standard, links);
     card.append(top, summary, footer);
     this.body.appendChild(card);
   }

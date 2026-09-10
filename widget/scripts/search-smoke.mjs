@@ -140,11 +140,24 @@ assert(
   "View all lesson materials label is missing from main.ts",
 );
 assert(mainSrc.includes("lessonMaterialsFolderUrl"), "folder helper is not used in main.ts");
+const footerCss = readFileSync(path.join(widgetRoot, "src/styles.css"), "utf8");
+assert(!mainSrc.includes("elf-card-footer-primary"), "footer primary row should be gone so links are not beside standards");
 assert(
-  mainSrc.includes("elf-card-link-materials") &&
-    mainSrc.includes("elf-card-footer-primary") &&
-    readFileSync(path.join(widgetRoot, "src/styles.css"), "utf8").includes(".elf-card-link-materials"),
-  "materials link needs a dedicated footer row under View/Download",
+  /footer\.append\(\s*standard,\s*links\s*\)/.test(mainSrc),
+  "standards and action links must be sibling footer rows",
+);
+assert(
+  /flex-direction:\s*column/.test(footerCss.match(/\.elf-card-footer\s*\{[^}]+\}/)?.[0] ?? ""),
+  ".elf-card-footer must stack standards above the links",
+);
+assert(
+  /justify-content:\s*flex-start/.test(footerCss.match(/\.elf-card-links\s*\{[^}]+\}/)?.[0] ?? "") &&
+    /flex-wrap:\s*wrap/.test(footerCss.match(/\.elf-card-links\s*\{[^}]+\}/)?.[0] ?? ""),
+  ".elf-card-links must be left-aligned and allowed to wrap",
+);
+assert(
+  !/\.elf-card-link-materials\s*\{[^}]*align-self:\s*flex-end/.test(footerCss),
+  "materials link must not be right-aligned",
 );
 
 const toggleSrc = mainSrc.match(/private toggle\(force\?: boolean\): void \{[\s\S]*?\n  \}/)?.[0] ?? "";
