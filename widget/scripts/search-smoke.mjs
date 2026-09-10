@@ -192,6 +192,63 @@ assert(
   "materials link must not be right-aligned",
 );
 
+const foodChains = LESSONS.find((l) => l.title === "Everglades Food Chains");
+assert(Boolean(foodChains), "Everglades Food Chains must be in the catalog");
+assert(
+  JSON.stringify(foodChains?.ngsssStandards) ===
+    JSON.stringify(["SC.4.L.17.3", "SC.4.L.17.4", "MAFS.K12.MP.2.1"]),
+  `Everglades Food Chains must keep every NGSSS code, got: ${foodChains?.ngsssStandards.join(" · ")}`,
+);
+assert(
+  /ngsssStandards\.join\(" · "\)/.test(mainSrc),
+  'lesson cards must join every NGSSS code with " · "',
+);
+assert(
+  !/ngsssStandards\.(slice|splice|substring|substr)/.test(mainSrc),
+  "lesson cards must not drop NGSSS codes from the array",
+);
+
+const standardCss = footerCss.match(/\.elf-standard\s*\{[^}]+\}/)?.[0] ?? "";
+assert(Boolean(standardCss), ".elf-standard rule is missing");
+assert(
+  /white-space:\s*normal/.test(standardCss) &&
+    /overflow:\s*visible/.test(standardCss) &&
+    /text-overflow:\s*unset/.test(standardCss),
+  ".elf-standard must wrap and stay fully visible, not clip",
+);
+assert(
+  !/text-overflow:\s*ellipsis/.test(standardCss) &&
+    !/white-space:\s*nowrap/.test(standardCss) &&
+    !/overflow:\s*hidden/.test(standardCss) &&
+    !/line-clamp/.test(standardCss) &&
+    !/-webkit-line-clamp/.test(standardCss) &&
+    !/max-height/.test(standardCss),
+  ".elf-standard must not ellipsize, nowrap, hide overflow, line-clamp, or cap height",
+);
+assert(
+  !/\.elf-standard[^{]*\{[^}]*text-overflow:\s*ellipsis/.test(footerCss),
+  "no .elf-standard rule may use text-overflow: ellipsis",
+);
+
+const titleCss = footerCss.match(/\.elf-card-title\s*\{[^}]+\}/)?.[0] ?? "";
+const summaryCss = footerCss.match(/\.elf-card-summary\s*\{[^}]+\}/)?.[0] ?? "";
+assert(
+  !/text-overflow:\s*ellipsis/.test(titleCss) && !/white-space:\s*nowrap/.test(titleCss),
+  "lesson titles must not be truncated as a side effect of the standards wrap fix",
+);
+assert(
+  !/text-overflow:\s*ellipsis/.test(summaryCss) && !/white-space:\s*nowrap/.test(summaryCss),
+  "lesson summaries must not be truncated as a side effect of the standards wrap fix",
+);
+
+const panelCss = footerCss.match(/\.elf-panel\s*\{[^}]+\}/)?.[0] ?? "";
+const panelWidth = Number(panelCss.match(/^\s*width:\s*(\d+)px/m)?.[1] ?? 0);
+const panelMaxWidth = Number(panelCss.match(/max-width:\s*min\((\d+)px/)?.[1] ?? 0);
+assert(
+  panelWidth >= 520 && panelWidth <= 560 && panelMaxWidth >= 520 && panelMaxWidth <= 560,
+  `chat panel should be 520–560px wide so standards fit; got width=${panelWidth} max-width=${panelMaxWidth}`,
+);
+
 const toggleSrc = mainSrc.match(/private toggle\(force\?: boolean\): void \{[\s\S]*?\n  \}/)?.[0] ?? "";
 const resetSrc = mainSrc.match(/private resetConversation\(\): void \{[\s\S]*?\n  \}/)?.[0] ?? "";
 assert(Boolean(toggleSrc), "toggle() is missing from main.ts");

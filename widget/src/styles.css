@@ -141,10 +141,10 @@
   position: fixed;
   right: 24px;
   bottom: 88px;
-  width: 480px;
-  max-width: min(480px, calc(100vw - 32px));
-  height: 640px;
-  max-height: min(640px, calc(100vh - 120px));
+  width: 540px;
+  max-width: min(540px, calc(100vw - 32px));
+  height: 680px;
+  max-height: min(680px, calc(100vh - 120px));
   background: var(--surface);
   border-radius: 26px;
   box-shadow: 0 24px 50px -24px rgba(12, 60, 52, 0.45), 0 0 0 1px rgba(12, 60, 52, 0.07);
@@ -447,13 +447,25 @@
   align-items: flex-start;
   gap: 1em;
   padding-top: 2px;
+  width: 100%;
+  min-width: 0;
 }
 
 .elf-standard {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   font-family: var(--mono);
   font-size: 11px;
+  line-height: 1.45;
   color: #8a9187;
   font-weight: 400;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .elf-standard:empty {
@@ -578,7 +590,7 @@
   transform: none;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
   .elf-panel {
     right: 12px;
     left: 12px;
@@ -586,7 +598,7 @@
     width: auto;
     max-width: none;
     height: auto;
-    max-height: calc(100vh - 108px);
+    max-height: calc(100vh - 100px);
   }
 
   .elf-launcher {
