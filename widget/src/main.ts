@@ -4,6 +4,7 @@ import {
   lessonPlanDownloadUrl,
   lessonPlanViewUrl,
 } from "./lessonUrls";
+import { resetConversation as clearTranscript } from "./resetConversation";
 import { searchLessons } from "./search";
 import type { Lesson } from "./types";
 
@@ -12,6 +13,7 @@ export {
   lessonPlanDownloadUrl,
   lessonPlanViewUrl,
 } from "./lessonUrls";
+export { resetConversation } from "./resetConversation";
 
 const QUICK_PROMPTS = [
   "Show me 4th grade lessons",
@@ -174,7 +176,13 @@ class LessonFinderWidget {
   }
 
   private toggle(force?: boolean): void {
-    this.isOpen = force ?? !this.isOpen;
+    const nextOpen = force ?? !this.isOpen;
+    // Closing (X or launcher) clears the transcript so the next open is
+    // always the greeting + quick prompts, not the previous search results.
+    if (!nextOpen && this.isOpen) {
+      this.resetConversation();
+    }
+    this.isOpen = nextOpen;
     this.panel.classList.toggle("elf-open", this.isOpen);
     this.syncGreeting();
     if (this.isOpen && !this.hasGreeted) {
@@ -183,6 +191,12 @@ class LessonFinderWidget {
       this.renderQuickPrompts();
     }
     if (this.isOpen) this.input.focus();
+  }
+
+  private resetConversation(): void {
+    const next = clearTranscript({ body: this.body, input: this.input });
+    this.chipsEl = next.chipsEl;
+    this.hasGreeted = next.hasGreeted;
   }
 
   private renderQuickPrompts(): void {

@@ -20,6 +20,7 @@ try {
 const tmp = mkdtempSync(path.join(tmpdir(), "elf-search-"));
 const outfile = path.join(tmp, "search.mjs");
 const urlOutfile = path.join(tmp, "lessonUrls.mjs");
+const resetOutfile = path.join(tmp, "resetConversation.mjs");
 
 function bundle(entry, dest) {
   const bundled = spawnSync(
@@ -35,11 +36,13 @@ function bundle(entry, dest) {
 
 bundle(path.join(widgetRoot, "src/search.ts"), outfile);
 bundle(path.join(widgetRoot, "src/lessonUrls.ts"), urlOutfile);
+bundle(path.join(widgetRoot, "src/resetConversation.ts"), resetOutfile);
 
 const { LESSONS, extractGrade, searchLessons } = await import(pathToFileURL(outfile).href);
 const { lessonMaterialsFolderUrl, lessonPlanDownloadUrl, lessonPlanViewUrl } = await import(
   pathToFileURL(urlOutfile).href
 );
+const { resetConversation } = await import(pathToFileURL(resetOutfile).href);
 
 const failures = [];
 
@@ -143,6 +146,54 @@ assert(
     readFileSync(path.join(widgetRoot, "src/styles.css"), "utf8").includes(".elf-card-link-materials"),
   "materials link needs a dedicated footer row under View/Download",
 );
+
+const toggleSrc = mainSrc.match(/private toggle\(force\?: boolean\): void \{[\s\S]*?\n  \}/)?.[0] ?? "";
+const resetSrc = mainSrc.match(/private resetConversation\(\): void \{[\s\S]*?\n  \}/)?.[0] ?? "";
+assert(Boolean(toggleSrc), "toggle() is missing from main.ts");
+assert(Boolean(resetSrc), "resetConversation() is missing from main.ts");
+assert(
+  /if \(!nextOpen && this\.isOpen\)/.test(toggleSrc) && /this\.resetConversation\(\)/.test(toggleSrc),
+  "closing the panel (X or launcher) must call resetConversation()",
+);
+assert(
+  /clearTranscript\(\{ body: this\.body, input: this\.input \}\)/.test(resetSrc),
+  "resetConversation() must clear the transcript via clearTranscript()",
+);
+assert(
+  /this\.chipsEl = next\.chipsEl/.test(resetSrc) && /this\.hasGreeted = next\.hasGreeted/.test(resetSrc),
+  "resetConversation() must restore chips/hasGreeted so reopen re-greets",
+);
+assert(
+  /this\.isOpen && !this\.hasGreeted/.test(toggleSrc) &&
+    /this\.addAssistantBubble\(GREETING\)/.test(toggleSrc) &&
+    /this\.renderQuickPrompts\(\)/.test(toggleSrc),
+  "reopening after reset must restore the greeting and quick prompts",
+);
+assert(
+  /closeBtn\.addEventListener\("click", \(\) => this\.toggle\(false\)\)/.test(mainSrc),
+  "panel X must close via toggle(false)",
+);
+assert(
+  /launcher\.addEventListener\("click", \(\) => this\.toggle\(\)\)/.test(mainSrc),
+  "launcher click must toggle open/close (close path also resets)",
+);
+assert(
+  /greeting\.addEventListener\("click", \(\) => this\.toggle\(true\)\)/.test(mainSrc),
+  "We're Online greeting still opens the panel",
+);
+
+const leftover = { nodes: ["greeting", "chips", "user", "card"] };
+const body = {
+  replaceChildren() {
+    leftover.nodes = [];
+  },
+};
+const input = { value: "Don't Feed the Gators" };
+const reset = resetConversation({ body, input });
+assert(leftover.nodes.length === 0, "resetConversation must empty the transcript body");
+assert(input.value === "", "resetConversation must clear typed input");
+assert(reset.chipsEl === null, "resetConversation must drop quick-prompt chips");
+assert(reset.hasGreeted === false, "resetConversation must set hasGreeted false for a fresh greeting");
 
 for (const lesson of LESSONS) {
   const href = lessonPlanViewUrl(lesson);
