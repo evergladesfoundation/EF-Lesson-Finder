@@ -98,6 +98,16 @@ function extractStandard(query: string): string | null {
   return match ? match[1].toUpperCase() : null;
 }
 
+const AP_UNIT_PATTERN =
+  /\b(?:ap(?:es)?(?:\s+environmental(?:\s+science)?)?)\s*unit\s*(\d{1,2})\b/i;
+
+export function extractApUnit(query: string): number | null {
+  const match = query.match(AP_UNIT_PATTERN);
+  if (!match) return null;
+  const unit = parseInt(match[1], 10);
+  return unit >= 1 && unit <= 9 ? unit : null;
+}
+
 function queryWords(query: string): string[] {
   return query
     .toLowerCase()
@@ -117,10 +127,15 @@ function scoreLesson(
   lesson: Lesson,
   words: string[],
   standard: string | null,
+  apUnit: number | null,
 ): number {
   let score = 0;
 
   if (standard && lesson.ngsssStandards.some((s) => s.toUpperCase() === standard)) {
+    score += 10;
+  }
+
+  if (apUnit !== null && lesson.apUnitNumbers.includes(apUnit)) {
     score += 10;
   }
 
@@ -130,6 +145,8 @@ function scoreLesson(
     lesson.fundamentalConcept,
     ...lesson.topics,
     ...lesson.ngsssStandards,
+    ...lesson.apUnitTitles,
+    ...lesson.apUnitNumbers.map((n) => `ap unit ${n}`),
   ]
     .join(" ")
     .toLowerCase();
@@ -157,6 +174,7 @@ export function searchLessons(query: string): ChatReply {
 
   const grade = extractGrade(trimmed);
   const standard = extractStandard(trimmed);
+  const apUnit = extractApUnit(trimmed);
   const words = queryWords(trimmed);
   const gradeOnly = isGradeOnlyQuery(words, grade);
 
@@ -165,13 +183,13 @@ export function searchLessons(query: string): ChatReply {
 
   const scored = pool.map((lesson) => ({
     lesson,
-    score: gradeOnly ? 1 : scoreLesson(lesson, words, standard),
+    score: gradeOnly ? 1 : scoreLesson(lesson, words, standard, apUnit),
   }));
 
   const keywordHits = scored.filter((s) => s.score > 0);
   const ranked = (keywordHits.length > 0 ? keywordHits : grade !== null ? scored : [])
     .sort((a, b) => b.score - a.score);
-  const cap = gradeOnly || (grade !== null && keywordHits.length === 0)
+  const cap = gradeOnly || (grade !== null && keywordHits.length === 0) || apUnit !== null
     ? MAX_GRADE_RESULTS
     : MAX_TOPIC_RESULTS;
   const matches = ranked.slice(0, cap).map((s) => s.lesson);
@@ -184,7 +202,7 @@ export function searchLessons(query: string): ChatReply {
   }
 
   return {
-    text: describeMatches(matches, { grade, standard }),
+    text: describeMatches(matches, { grade, standard, apUnit }),
     lessons: matches,
   };
 }
@@ -193,14 +211,29 @@ function matchesRequestedGrade(matches: Lesson[], grade: number): boolean {
   return matches.every((m) => inGradeBand(m, grade));
 }
 
+function apUnitTitleFor(matches: Lesson[], unit: number): string | undefined {
+  for (const lesson of matches) {
+    const index = lesson.apUnitNumbers.indexOf(unit);
+    if (index >= 0 && lesson.apUnitTitles[index]) {
+      return lesson.apUnitTitles[index];
+    }
+  }
+  return undefined;
+}
+
 function describeMatches(
   matches: Lesson[],
-  filters: { grade: number | null; standard: string | null },
+  filters: { grade: number | null; standard: string | null; apUnit: number | null },
 ): string {
   const lead = matches.length === 1 ? "Here's a lesson" : `Here are ${matches.length} lessons`;
 
   if (filters.standard) {
     return `${lead} aligned with ${filters.standard}:`;
+  }
+  if (filters.apUnit !== null) {
+    const title = apUnitTitleFor(matches, filters.apUnit);
+    const label = title ? `AP Unit ${filters.apUnit}: ${title}` : `AP Unit ${filters.apUnit}`;
+    return `${lead} aligned with ${label}:`;
   }
   if (filters.grade !== null && matchesRequestedGrade(matches, filters.grade)) {
     const allHighSchool = matches.every((m) => m.gradeMin >= 9);

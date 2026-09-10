@@ -325,9 +325,20 @@ class LessonFinderWidget {
     const footer = document.createElement("div");
     footer.className = "elf-card-footer";
 
+    const meta = document.createElement("div");
+    meta.className = "elf-card-meta";
+
+    if (lesson.apUnitTitles.length > 0) {
+      const apLine = document.createElement("p");
+      apLine.className = "elf-ap-unit";
+      apLine.textContent = `AP Unit Title > ${lesson.apUnitTitles.join(" · ")}`;
+      meta.appendChild(apLine);
+    }
+
     const standard = document.createElement("span");
     standard.className = "elf-standard";
     standard.textContent = lesson.ngsssStandards.join(" · ");
+    meta.appendChild(standard);
 
     const links = document.createElement("div");
     links.className = "elf-card-links";
@@ -367,7 +378,7 @@ class LessonFinderWidget {
       links.appendChild(folderLink);
     }
 
-    footer.append(standard, links);
+    footer.append(meta, links);
     content.append(top, summary, footer);
     card.append(content);
     this.body.appendChild(card);

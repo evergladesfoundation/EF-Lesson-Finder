@@ -6,6 +6,8 @@ export interface Lesson {
   gradeMax: number;
   topics: string[];
   ngsssStandards: string[];
+  apUnitTitles: string[];
+  apUnitNumbers: number[];
   fundamentalConcept: string;
   summary: string;
   lessonUrl: string;
