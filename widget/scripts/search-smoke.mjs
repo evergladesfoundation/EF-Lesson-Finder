@@ -107,10 +107,10 @@ assert(
 
 const mainSrc = readFileSync(path.join(widgetRoot, "src/main.ts"), "utf8");
 assert(
-  mainSrc.includes("We're Online! How may I help you today?"),
+  mainSrc.includes("We're Online!") && mainSrc.includes("How may I help you today?"),
   "launcher greeting is missing from main.ts",
 );
-assert(mainSrc.includes("View lesson"), "View lesson label is missing from main.ts");
+assert(mainSrc.includes("View lesson →"), "View lesson label is missing from main.ts");
 assert(mainSrc.includes("Download"), "Download label is missing from main.ts");
 
 for (const lesson of LESSONS) {

@@ -15,8 +15,6 @@ const QUICK_PROMPTS = [
 const GREETING =
   "Hi! I can help you find Everglades Literacy lessons by topic, grade level, NGSSS standard, or Fundamental Concept. What are you looking for?";
 
-const LAUNCHER_GREETING = "We're Online! How may I help you today?";
-
 const HOST_LIGHT_CSS = `#everglades-lesson-finder-host {
   position: absolute;
   width: 0;
@@ -84,8 +82,12 @@ class LessonFinderWidget {
     const greeting = document.createElement("div");
     greeting.className = "elf-greeting";
     greeting.setAttribute("role", "status");
-    const greetingText = document.createElement("p");
-    greetingText.textContent = LAUNCHER_GREETING;
+    const greetingTitle = document.createElement("p");
+    greetingTitle.className = "elf-greeting-title";
+    greetingTitle.textContent = "We're Online!";
+    const greetingBody = document.createElement("p");
+    greetingBody.className = "elf-greeting-body";
+    greetingBody.textContent = "How may I help you today?";
     const greetingClose = document.createElement("button");
     greetingClose.type = "button";
     greetingClose.className = "elf-greeting-close";
@@ -96,7 +98,7 @@ class LessonFinderWidget {
       this.greetingDismissed = true;
       this.syncGreeting();
     });
-    greeting.append(greetingText, greetingClose);
+    greeting.append(greetingTitle, greetingBody, greetingClose);
     greeting.addEventListener("click", () => this.toggle(true));
     this.greetingEl = greeting;
 
@@ -261,7 +263,7 @@ class LessonFinderWidget {
     const viewHref = lessonPlanViewUrl(lesson);
     viewLink.target = "_blank";
     viewLink.rel = "noopener noreferrer";
-    viewLink.textContent = "View lesson";
+    viewLink.textContent = "View lesson →";
     if (viewHref.startsWith("https://")) {
       viewLink.href = viewHref;
     } else {
