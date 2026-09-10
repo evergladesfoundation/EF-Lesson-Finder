@@ -3,25 +3,21 @@ import { searchLessons } from "./search";
 import type { Lesson } from "./types";
 
 const QUICK_PROMPTS = [
+  "Show me 4th grade lessons",
   "Find a 5th-grade lesson on invasive species",
+  "Don't Feed the Gators",
   "Which lessons cover the water cycle?",
-  `What standards does "Don't Feed the Gators!" align with?`,
-  "Show me a lesson about wading birds",
 ];
 
 const GREETING =
   "Hi! I can help you find Everglades Literacy lessons by topic, grade level, NGSSS standard, or Fundamental Concept. What are you looking for?";
 
-// Real lesson pages/PDFs don't exist yet (Phase 1 data pipeline). Until then,
-// "View lesson" opens a static placeholder so stakeholders can see the click-through
-// working end to end. Resolved against the widget script's own origin (via
-// document.currentScript) so it still works once widget.js is served from a CDN.
-function demoLessonUrl(lesson: Lesson): string {
-  const scriptSrc = (document.currentScript as HTMLScriptElement | null)?.src;
-  const base = new URL(scriptSrc ?? location.href);
-  const url = new URL("lesson-plan-demo.html", base);
-  url.searchParams.set("title", lesson.title);
-  return url.toString();
+function lessonPlanUrl(lesson: Lesson): string {
+  const pdf = lesson.pdfUrl.trim();
+  const folder = lesson.lessonUrl.trim();
+  if (pdf.startsWith("https://")) return pdf;
+  if (folder.startsWith("https://")) return folder;
+  return "";
 }
 
 function svgIcon(path: string, size = 24): SVGSVGElement {
@@ -221,10 +217,15 @@ class LessonFinderWidget {
 
     const link = document.createElement("a");
     link.className = "elf-card-link";
-    link.href = demoLessonUrl(lesson);
+    const href = lessonPlanUrl(lesson);
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.textContent = "View lesson →";
+    if (href.startsWith("https://")) {
+      link.href = href;
+    } else {
+      link.setAttribute("aria-disabled", "true");
+    }
 
     footer.append(standard, link);
     card.append(top, summary, footer);
