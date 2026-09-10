@@ -451,6 +451,29 @@
   min-width: 0;
 }
 
+.elf-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.elf-ap-unit {
+  margin: 0;
+  width: 100%;
+  font-family: "Work Sans", sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #5f746c;
+  font-weight: 500;
+}
+
+.elf-ap-unit:empty {
+  display: none;
+}
+
 .elf-standard {
   display: block;
   box-sizing: border-box;

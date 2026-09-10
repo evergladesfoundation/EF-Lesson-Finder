@@ -38,7 +38,7 @@ bundle(path.join(widgetRoot, "src/search.ts"), outfile);
 bundle(path.join(widgetRoot, "src/lessonUrls.ts"), urlOutfile);
 bundle(path.join(widgetRoot, "src/resetConversation.ts"), resetOutfile);
 
-const { LESSONS, extractGrade, searchLessons } = await import(pathToFileURL(outfile).href);
+const { LESSONS, extractGrade, extractApUnit, searchLessons } = await import(pathToFileURL(outfile).href);
 const { lessonMaterialsFolderUrl, lessonPlanDownloadUrl, lessonPlanViewUrl } = await import(
   pathToFileURL(urlOutfile).href
 );
@@ -162,12 +162,22 @@ assert(
 );
 assert(!mainSrc.includes("elf-card-footer-primary"), "footer primary row should be gone so links are not beside standards");
 assert(
-  /footer\.append\(\s*standard,\s*links\s*\)/.test(mainSrc),
-  "standards and action links must be sibling footer rows",
+  /footer\.append\(\s*meta,\s*links\s*\)/.test(mainSrc),
+  "AP unit/standards stack and action links must be sibling footer rows",
+);
+assert(mainSrc.includes("AP Unit Title >"), "lesson cards must prefix mapped AP units with AP Unit Title >");
+assert(mainSrc.includes("elf-ap-unit"), "AP unit line class is missing from main.ts");
+assert(
+  /apUnitTitles\.length\s*>\s*0/.test(mainSrc),
+  "AP unit line must be omitted when a lesson has no mapped AP units",
 );
 assert(
   /flex-direction:\s*column/.test(footerCss.match(/\.elf-card-footer\s*\{[^}]+\}/)?.[0] ?? ""),
   ".elf-card-footer must stack standards above the links",
+);
+assert(
+  /flex-direction:\s*column/.test(footerCss.match(/\.elf-card-meta\s*\{[^}]+\}/)?.[0] ?? ""),
+  ".elf-card-meta must stack AP unit title above Florida Science Standards",
 );
 const linksCss = footerCss.match(/\.elf-card-links\s*\{[^}]+\}/)?.[0] ?? "";
 const linkCss = footerCss.match(/\.elf-card-link\s*\{[^}]+\}/)?.[0] ?? "";
@@ -198,6 +208,39 @@ assert(
   JSON.stringify(foodChains?.ngsssStandards) ===
     JSON.stringify(["SC.4.L.17.3", "SC.4.L.17.4", "MAFS.K12.MP.2.1"]),
   `Everglades Food Chains must keep every NGSSS code, got: ${foodChains?.ngsssStandards.join(" · ")}`,
+);
+assert(
+  JSON.stringify(foodChains?.apUnitTitles) === JSON.stringify(["The Living World: Ecosystems"]),
+  `Everglades Food Chains should map to AP Unit 1 from the unit crosswalk, got: ${foodChains?.apUnitTitles.join(" · ")}`,
+);
+
+const survival = LESSONS.find((l) => l.title === "Survival");
+assert(Boolean(survival), "Survival must be in the catalog");
+assert(
+  JSON.stringify(survival?.apUnitTitles) ===
+    JSON.stringify(["The Living World: Ecosystems", "Earth Systems and Resources"]),
+  `Survival should keep Lesson Catalog units 1 and 4, got: ${survival?.apUnitTitles.join(" · ")}`,
+);
+assert(
+  JSON.stringify(survival?.apUnitNumbers) === JSON.stringify([1, 4]),
+  `Survival apUnitNumbers should be [1, 4], got: ${JSON.stringify(survival?.apUnitNumbers)}`,
+);
+
+const prek = LESSONS.find((l) => l.id === "PK.1");
+assert(
+  Array.isArray(prek?.apUnitTitles) && prek.apUnitTitles.length === 0,
+  "Pre-K lessons should have an empty apUnitTitles list",
+);
+
+const gatorsLesson = LESSONS.find((l) => l.title === "Don't Feed the Gators!");
+assert(
+  Array.isArray(gatorsLesson?.apUnitTitles) && gatorsLesson.apUnitTitles.length === 0,
+  "Don't Feed the Gators! should not show an AP unit line",
+);
+
+assert(
+  LESSONS.every((l) => Array.isArray(l.apUnitTitles) && Array.isArray(l.apUnitNumbers)),
+  "every lesson needs apUnitTitles and apUnitNumbers arrays",
 );
 assert(
   /ngsssStandards\.join\(" · "\)/.test(mainSrc),
@@ -361,6 +404,36 @@ const gators = searchLessons("Don't Feed the Gators");
 assert(
   gators.lessons.some((l) => l.title === "Don't Feed the Gators!"),
   `expected Don't Feed the Gators! in results: ${gators.lessons.map((l) => l.title).join("; ")}`,
+);
+
+assert(extractApUnit("AP unit 2") === 2, 'extractApUnit("AP unit 2") should be 2');
+assert(extractApUnit("APES unit 5") === 5, 'extractApUnit("APES unit 5") should be 5');
+assert(extractApUnit("4th grade lessons") === null, "grade queries should not parse as AP units");
+
+const apUnit2 = searchLessons("AP unit 2");
+assert(
+  apUnit2.lessons.some((l) => l.title === "Living on the Edge"),
+  `AP unit 2 should include Living on the Edge, got: ${apUnit2.lessons.map((l) => l.title).join("; ")}`,
+);
+assert(
+  apUnit2.lessons.every((l) => l.apUnitNumbers.includes(2)),
+  "AP unit 2 search mixed in lessons without that unit",
+);
+assert(
+  /AP Unit 2: The Living World: Biodiversity/.test(apUnit2.text),
+  `AP unit 2 reply should name the unit title, got: ${apUnit2.text}`,
+);
+
+const biodiversity = searchLessons("biodiversity");
+assert(
+  biodiversity.lessons.some((l) => l.apUnitTitles.includes("The Living World: Biodiversity")),
+  `biodiversity search should hit AP-mapped lessons, got: ${biodiversity.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const landWater = searchLessons("land and water use");
+assert(
+  landWater.lessons.some((l) => l.title === "Tragedy of the Commons"),
+  `land and water use should find Tragedy of the Commons, got: ${landWater.lessons.map((l) => l.title).join("; ")}`,
 );
 
 if (failures.length) {
