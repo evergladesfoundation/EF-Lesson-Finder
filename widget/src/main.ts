@@ -1,9 +1,17 @@
 import styles from "./styles.css?inline";
-import { lessonPlanDownloadUrl, lessonPlanViewUrl } from "./lessonUrls";
+import {
+  lessonMaterialsFolderUrl,
+  lessonPlanDownloadUrl,
+  lessonPlanViewUrl,
+} from "./lessonUrls";
 import { searchLessons } from "./search";
 import type { Lesson } from "./types";
 
-export { lessonPlanDownloadUrl, lessonPlanViewUrl } from "./lessonUrls";
+export {
+  lessonMaterialsFolderUrl,
+  lessonPlanDownloadUrl,
+  lessonPlanViewUrl,
+} from "./lessonUrls";
 
 const QUICK_PROMPTS = [
   "Show me 4th grade lessons",
@@ -283,6 +291,17 @@ class LessonFinderWidget {
     }
 
     footer.append(standard, links);
+
+    const folderHref = lessonMaterialsFolderUrl(lesson);
+    if (folderHref) {
+      const folderLink = document.createElement("a");
+      folderLink.className = "elf-card-link elf-card-link-materials";
+      folderLink.target = "_blank";
+      folderLink.rel = "noopener noreferrer";
+      folderLink.textContent = "View all lesson materials";
+      folderLink.href = folderHref;
+      footer.appendChild(folderLink);
+    }
     card.append(top, summary, footer);
     this.body.appendChild(card);
   }
