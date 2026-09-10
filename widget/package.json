@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit && node scripts/search-smoke.mjs",
     "build": "vite build && cp demo/index.html dist/index.html",
     "preview": "vite preview"
   },
