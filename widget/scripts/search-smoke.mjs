@@ -150,10 +150,23 @@ assert(
   /flex-direction:\s*column/.test(footerCss.match(/\.elf-card-footer\s*\{[^}]+\}/)?.[0] ?? ""),
   ".elf-card-footer must stack standards above the links",
 );
+const linksCss = footerCss.match(/\.elf-card-links\s*\{[^}]+\}/)?.[0] ?? "";
+const linkCss = footerCss.match(/\.elf-card-link\s*\{[^}]+\}/)?.[0] ?? "";
 assert(
-  /justify-content:\s*flex-start/.test(footerCss.match(/\.elf-card-links\s*\{[^}]+\}/)?.[0] ?? "") &&
-    /flex-wrap:\s*wrap/.test(footerCss.match(/\.elf-card-links\s*\{[^}]+\}/)?.[0] ?? ""),
+  /justify-content:\s*flex-start/.test(linksCss) && /flex-wrap:\s*wrap/.test(linksCss),
   ".elf-card-links must be left-aligned and allowed to wrap",
+);
+assert(
+  /white-space:\s*nowrap/.test(linkCss),
+  "each action link must stay on one line; only the row may wrap if the panel is too narrow",
+);
+assert(
+  /font-size:\s*12px/.test(linkCss),
+  "action links should use a slightly smaller font so all three fit on one row at widget width",
+);
+assert(
+  /gap:\s*8px/.test(linksCss),
+  ".elf-card-links gap should stay compact so View/Download/materials fit on one row",
 );
 assert(
   !/\.elf-card-link-materials\s*\{[^}]*align-self:\s*flex-end/.test(footerCss),
