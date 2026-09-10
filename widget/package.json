@@ -7,7 +7,7 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "test": "tsc --noEmit && node scripts/search-smoke.mjs",
-    "build": "tsc --noEmit && node scripts/search-smoke.mjs && vite build && cp demo/index.html dist/index.html",
+    "build": "vite build && cp demo/index.html dist/index.html",
     "preview": "vite preview"
   },
   "devDependencies": {
