@@ -1,20 +1,31 @@
-@import url("https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=Public+Sans:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&family=Work+Sans:wght@400;500;600&display=swap");
 
 :host,
 .elf-root {
-  --cypress: #16352a;
-  --sawgrass: #7c9a4c;
-  --teal: #2e7d74;
-  --egret: #faf9f2;
-  --text-muted: #5c6f5e;
-  --chip-bg: #eee7d6;
-  --shadow: 0 12px 32px rgba(22, 53, 42, 0.24);
+  --ink: #14342d;
+  --body: #46605a;
+  --muted: #8a9187;
+  --primary: #0e6b6b;
+  --primary-hover: #094f4f;
+  --accent: #7a984a;
+  --surface: #fffefa;
+  --tray: #f4f1e6;
+  --user-bg: #e6f0e0;
+  --user-ink: #23453c;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   all: initial;
-  font-family: "Public Sans", -apple-system, sans-serif;
+  font-family: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  color: var(--body);
 }
 
 .elf-root * {
   box-sizing: border-box;
+}
+
+.elf-root button,
+.elf-root input,
+.elf-root a {
   font-family: inherit;
 }
 
@@ -22,40 +33,53 @@
   position: fixed;
   right: 24px;
   bottom: 24px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--cypress);
+  width: auto;
+  height: auto;
+  padding: 12px 18px 12px 14px;
+  border-radius: 999px;
+  background: #14342d;
+  color: #eaf3e6;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow);
+  gap: 10px;
+  box-shadow: 0 16px 30px -16px rgba(8, 32, 26, 0.85);
   z-index: 2147483000;
   pointer-events: auto;
-  transition: transform 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .elf-launcher:hover {
-  transform: scale(1.06);
+  background: #0b241f;
 }
 
-.elf-launcher svg {
-  width: 28px;
-  height: 28px;
+.elf-launcher-mark {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #7a984a;
+}
+
+.elf-launcher-label {
+  font-family: "Work Sans", sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
 }
 
 .elf-greeting {
   position: fixed;
-  right: 96px;
-  bottom: 28px;
-  max-width: min(260px, calc(100vw - 130px));
-  background: #ffffff;
-  color: var(--cypress);
+  right: 24px;
+  bottom: 82px;
+  max-width: min(260px, calc(100vw - 48px));
+  background: var(--surface);
+  color: var(--ink);
   border-radius: 18px;
   padding: 12px 36px 12px 16px;
-  box-shadow: 0 8px 24px rgba(22, 53, 42, 0.18);
+  box-shadow: 0 16px 30px -16px rgba(8, 32, 26, 0.85), 0 0 0 1px rgba(12, 60, 52, 0.07);
   z-index: 2147483000;
   pointer-events: auto;
   cursor: pointer;
@@ -66,13 +90,13 @@
 .elf-greeting::after {
   content: "";
   position: absolute;
-  right: -6px;
-  top: 50%;
+  right: 28px;
+  bottom: -6px;
   width: 12px;
   height: 12px;
-  background: #ffffff;
-  transform: translateY(-50%) rotate(45deg);
-  box-shadow: 2px -2px 6px rgba(22, 53, 42, 0.06);
+  background: var(--surface);
+  transform: rotate(45deg);
+  box-shadow: 2px 2px 6px rgba(12, 60, 52, 0.06);
 }
 
 .elf-greeting[hidden] {
@@ -87,13 +111,13 @@
 
 .elf-greeting-title {
   font-weight: 600;
-  color: #222222;
+  color: var(--ink);
 }
 
 .elf-greeting-body {
   margin-top: 2px;
   font-weight: 400;
-  color: #6b6b6b;
+  color: var(--body);
 }
 
 .elf-greeting-close {
@@ -103,103 +127,185 @@
   z-index: 1;
   background: transparent;
   border: none;
-  color: var(--text-muted);
+  color: var(--muted);
   cursor: pointer;
   padding: 2px;
   line-height: 0;
 }
 
 .elf-greeting-close:hover {
-  color: var(--cypress);
+  color: var(--ink);
 }
 
 .elf-panel {
   position: fixed;
   right: 24px;
-  bottom: 96px;
-  width: 380px;
-  max-width: calc(100vw - 32px);
-  height: 560px;
-  max-height: calc(100vh - 140px);
-  background: var(--egret);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
+  bottom: 88px;
+  width: 480px;
+  max-width: min(480px, calc(100vw - 32px));
+  height: 640px;
+  max-height: min(640px, calc(100vh - 120px));
+  background: var(--surface);
+  border-radius: 26px;
+  box-shadow: 0 24px 50px -24px rgba(12, 60, 52, 0.45), 0 0 0 1px rgba(12, 60, 52, 0.07);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
   z-index: 2147483000;
   opacity: 0;
-  /* visibility:hidden (not only opacity:0) so a 380×560 layer cannot cover
-     Wix Inbox's greeting while the red chat button stays visible. */
+  /* visibility:hidden (not only opacity:0) so a closed layer cannot cover
+     Wix Inbox's greeting while the launcher stays visible. */
   visibility: hidden;
-  transform: translateY(12px) scale(0.98);
+  transform: translateY(8px);
   pointer-events: none;
-  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
 }
 
 .elf-panel.elf-open {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
   pointer-events: auto;
 }
 
-.elf-header {
-  background: var(--cypress);
-  color: var(--egret);
-  padding: 20px 20px 0 20px;
+.elf-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.035;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 10px,
+    rgba(20, 52, 45, 0.55) 10px 11px
+  );
+  animation: elf-reeds 18s ease-in-out infinite;
+}
+
+.elf-header,
+.elf-body,
+.elf-inputrow {
   position: relative;
-  flex-shrink: 0;
+  z-index: 1;
+}
+
+.elf-header {
+  background: linear-gradient(115deg, #0e6b6b 0%, #14837c 48%, #7a984a 130%);
+  color: #f2fbf6;
+  padding: 24px 24px 34px;
+  position: relative;
+}
+
+.elf-kicker {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f2fbf6;
 }
 
 .elf-header h1 {
-  font-family: "Bitter", serif;
-  font-weight: 700;
-  font-size: 20px;
-  margin: 0 0 6px 0;
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  max-width: 15ch;
+  margin: 0 0 10px;
+  color: #fffefa;
+  padding-right: 36px;
 }
 
-.elf-header p {
-  font-size: 13px;
-  line-height: 1.4;
-  color: rgba(250, 249, 242, 0.78);
-  margin: 0 0 16px 0;
-  padding-right: 28px;
+.elf-subhead,
+.elf-header p.elf-subhead {
+  font-family: "Work Sans", sans-serif;
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: rgba(242, 251, 246, 0.82);
+  max-width: 36ch;
+  margin: 0;
+  padding-right: 8px;
+}
+
+.elf-header-curve {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: -30px;
+  height: 56px;
+  background: #fffefa;
+  border-radius: 50% 50% 0 0;
+  pointer-events: none;
 }
 
 .elf-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 18px;
+  right: 18px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   background: transparent;
   border: none;
-  color: var(--egret);
-  opacity: 0.75;
+  color: #f2fbf6;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 0;
+  opacity: 0.9;
 }
 
 .elf-close:hover {
+  background: rgba(255, 255, 255, 0.16);
   opacity: 1;
 }
 
-.elf-grass {
-  height: 12px;
-  width: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='12' viewBox='0 0 20 12'%3E%3Cpath d='M0,0 L10,12 L20,0 Z' fill='%237C9A4C'/%3E%3C/svg%3E");
-  background-repeat: repeat-x;
-  background-size: 20px 12px;
-  flex-shrink: 0;
-}
-
 .elf-body {
-  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 16px;
+  padding: 18px 24px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  background: #fffefa;
+}
+
+@keyframes elf-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes elf-reeds {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+
+.elf-bubble,
+.elf-card,
+.elf-chips,
+.elf-results-head {
+  animation: elf-fade-in 0.28s ease-out;
 }
 
 .elf-bubble {
@@ -213,15 +319,15 @@
 .elf-bubble.elf-assistant {
   align-self: flex-start;
   background: #ffffff;
-  color: var(--cypress);
-  border: 1px solid rgba(22, 53, 42, 0.08);
+  color: var(--body);
+  border: 1px solid rgba(12, 60, 52, 0.06);
   border-bottom-left-radius: 4px;
 }
 
 .elf-bubble.elf-user {
   align-self: flex-end;
-  background: var(--cypress);
-  color: var(--egret);
+  background: var(--user-bg);
+  color: var(--user-ink);
   border-bottom-right-radius: 4px;
 }
 
@@ -229,20 +335,21 @@
   display: block;
   width: 100%;
   text-align: left;
-  background: #ffffff;
-  color: var(--cypress);
-  border: 1px solid rgba(22, 53, 42, 0.12);
-  border-radius: 12px;
+  background: #f4f1e6;
+  color: #3d6157;
+  border: none;
+  border-radius: 8px;
   padding: 12px 14px;
-  font-size: 13.5px;
+  font-family: "Work Sans", sans-serif;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .elf-chip:hover {
-  background: var(--chip-bg);
-  border-color: var(--sawgrass);
+  background: #0e6b6b;
+  color: #f2fbf6;
 }
 
 .elf-chips {
@@ -252,12 +359,66 @@
   align-self: stretch;
 }
 
+.elf-results-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  align-self: stretch;
+  margin: 2px 0 0;
+}
+
+.elf-results-label {
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 15px;
+  color: #3d6157;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.elf-results-rule {
+  flex: 1;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, #b9cdbe 0 4px, transparent 4px 8px);
+}
+
 .elf-card {
   align-self: stretch;
-  background: #ffffff;
-  border: 1px solid rgba(22, 53, 42, 0.08);
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 14px;
+  padding: 0 0 16px;
+  border: none;
+  border-bottom: 1px solid #e8e4d6;
+  border-radius: 0;
+  background: transparent;
+}
+
+.elf-card-photo {
+  width: 64px;
+  height: 64px;
   border-radius: 14px;
-  padding: 14px;
+  background-color: #eef3e8;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(122, 152, 74, 0.28) 0 3px,
+    transparent 3px 9px
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  color: #5c7448;
+  padding: 8px;
+}
+
+.elf-card-body {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -265,35 +426,42 @@
 
 .elf-card-top {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  align-items: baseline;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 6px 10px;
 }
 
 .elf-card-title {
-  font-family: "Bitter", serif;
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--cypress);
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--ink);
   margin: 0;
 }
 
 .elf-badge {
   flex-shrink: 0;
-  background: var(--chip-bg);
-  color: var(--cypress);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 9px;
-  border-radius: 999px;
+  background: transparent;
+  color: #0e6b6b;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0;
+  border-radius: 0;
   white-space: nowrap;
 }
 
 .elf-card-summary {
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--cypress);
+  font-size: 14px;
+  line-height: 1.55;
+  color: #46605a;
   margin: 0;
+  text-wrap: pretty;
 }
 
 .elf-card-footer {
@@ -301,14 +469,18 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 1em;
-  padding-top: 10px;
-  border-top: 1px solid rgba(22, 53, 42, 0.08);
+  padding-top: 2px;
 }
 
 .elf-standard {
+  font-family: var(--mono);
   font-size: 11px;
-  color: var(--text-muted);
-  font-weight: 600;
+  color: #8a9187;
+  font-weight: 400;
+}
+
+.elf-standard:empty {
+  display: none;
 }
 
 .elf-card-links {
@@ -322,14 +494,47 @@
 
 .elf-card-link {
   flex: 0 0 auto;
+  font-family: "Work Sans", sans-serif;
   font-size: 12px;
   font-weight: 600;
-  color: var(--teal);
   text-decoration: none;
   white-space: nowrap;
+  border-radius: 999px;
+  padding: 7px 14px;
+  line-height: 1.2;
 }
 
-.elf-card-link:hover {
+.elf-card-link-view {
+  background: #0e6b6b;
+  color: #f2fbf6;
+}
+
+.elf-card-link-view:hover {
+  background: #094f4f;
+  color: #f2fbf6;
+}
+
+.elf-card-link-download {
+  background: transparent;
+  color: #2c5044;
+  border: 1px solid #cfdccf;
+  padding: 6px 14px;
+}
+
+.elf-card-link-download:hover {
+  background: #f0f5ec;
+  text-decoration: none;
+}
+
+.elf-card-link-materials {
+  background: transparent;
+  color: #6f8a52;
+  border-radius: 0;
+  padding: 7px 4px;
+}
+
+.elf-card-link-materials:hover {
+  color: #094f4f;
   text-decoration: underline;
 }
 
@@ -341,56 +546,70 @@
 .elf-inputrow {
   flex-shrink: 0;
   display: flex;
-  gap: 8px;
-  padding: 12px;
-  border-top: 1px solid rgba(22, 53, 42, 0.1);
-  background: #ffffff;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  border-top: 0;
+  background: linear-gradient(180deg, #fffefa, #f4f1e6);
 }
 
 .elf-input {
   flex: 1;
-  border: 1px solid rgba(22, 53, 42, 0.18);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border: 1px solid #ddd8c6;
+  border-radius: 999px;
+  padding: 13px 16px;
+  font-family: "Work Sans", sans-serif;
   font-size: 14px;
-  color: var(--cypress);
-  background: var(--egret);
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.elf-input::placeholder {
+  color: var(--muted);
 }
 
 .elf-input:focus {
-  outline: 2px solid var(--sawgrass);
-  outline-offset: 1px;
+  outline: none;
+  border-color: #14837c;
+  box-shadow: 0 0 0 3px rgba(20, 131, 124, 0.16);
 }
 
 .elf-send {
-  background: var(--teal);
-  color: var(--egret);
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  background: linear-gradient(150deg, #14837c, #0e6b6b);
+  color: #ffffff;
   border: none;
-  border-radius: 10px;
-  padding: 0 16px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
   cursor: pointer;
+  box-shadow: 0 8px 18px -10px rgba(9, 79, 79, 0.9);
+  transition: transform 0.15s ease;
 }
 
 .elf-send:hover {
-  background: #26645d;
+  transform: translateY(-1px);
 }
 
 .elf-send:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 @media (max-width: 480px) {
   .elf-panel {
     right: 12px;
     left: 12px;
-    bottom: 88px;
+    bottom: 84px;
     width: auto;
     max-width: none;
     height: auto;
-    max-height: calc(100vh - 116px);
+    max-height: calc(100vh - 108px);
   }
 
   .elf-launcher {
@@ -399,7 +618,7 @@
   }
 
   .elf-greeting {
-    right: 84px;
-    bottom: 20px;
+    right: 16px;
+    bottom: 72px;
   }
 }

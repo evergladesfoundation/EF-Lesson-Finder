@@ -25,6 +25,22 @@ const QUICK_PROMPTS = [
 const GREETING =
   "Hi! I can help you find Everglades Literacy lessons by topic, grade level, NGSSS standard, or Fundamental Concept. What are you looking for?";
 
+const MATCH_COUNT_WORDS = [
+  "Zero",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Eleven",
+  "Twelve",
+];
+
 const HOST_LIGHT_CSS = `#everglades-lesson-finder-host {
   position: absolute;
   width: 0;
@@ -54,6 +70,11 @@ function svgIcon(path: string, size = 24): SVGSVGElement {
   return svg;
 }
 
+function describeMatchCount(count: number): string {
+  const word = MATCH_COUNT_WORDS[count] ?? String(count);
+  return count === 1 ? `${word} lesson matches` : `${word} lessons match`;
+}
+
 class LessonFinderWidget {
   private shadow: ShadowRoot;
   private panel!: HTMLDivElement;
@@ -81,12 +102,13 @@ class LessonFinderWidget {
     const launcher = document.createElement("button");
     launcher.className = "elf-launcher";
     launcher.setAttribute("aria-label", "Open Everglades Lesson Finder");
-    launcher.style.color = "#faf9f2";
-    launcher.appendChild(
-      svgIcon(
-        "M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z",
-      ),
-    );
+    const launcherMark = document.createElement("span");
+    launcherMark.className = "elf-launcher-mark";
+    launcherMark.setAttribute("aria-hidden", "true");
+    const launcherLabel = document.createElement("span");
+    launcherLabel.className = "elf-launcher-label";
+    launcherLabel.textContent = "Find a lesson";
+    launcher.append(launcherMark, launcherLabel);
     launcher.addEventListener("click", () => this.toggle());
 
     const greeting = document.createElement("div");
@@ -124,19 +146,26 @@ class LessonFinderWidget {
     const closeBtn = document.createElement("button");
     closeBtn.className = "elf-close";
     closeBtn.setAttribute("aria-label", "Close");
-    closeBtn.appendChild(svgIcon("M18 6 6 18M6 6l12 12", 18));
+    closeBtn.appendChild(svgIcon("M18 6 6 18M6 6l12 12", 16));
     closeBtn.addEventListener("click", () => this.toggle(false));
+
+    const kicker = document.createElement("p");
+    kicker.className = "elf-kicker";
+    kicker.textContent = "Teacher Toolkit";
 
     const title = document.createElement("h1");
     title.textContent = "Everglades Lesson Finder";
 
     const subtitle = document.createElement("p");
-    subtitle.textContent = "Search the PreK–12 Teacher Toolkit — lessons, grade levels & standards";
+    subtitle.className = "elf-subhead";
+    subtitle.textContent =
+      "Ask for a topic, grade level, or standard — we'll pull the matching PreK–12 lessons.";
 
-    header.append(closeBtn, title, subtitle);
+    const curve = document.createElement("div");
+    curve.className = "elf-header-curve";
+    curve.setAttribute("aria-hidden", "true");
 
-    const grass = document.createElement("div");
-    grass.className = "elf-grass";
+    header.append(closeBtn, kicker, title, subtitle, curve);
 
     const body = document.createElement("div");
     body.className = "elf-body";
@@ -155,7 +184,8 @@ class LessonFinderWidget {
     const sendBtn = document.createElement("button");
     sendBtn.className = "elf-send";
     sendBtn.type = "submit";
-    sendBtn.textContent = "Send";
+    sendBtn.setAttribute("aria-label", "Send");
+    sendBtn.textContent = "→";
 
     form.append(input, sendBtn);
     form.addEventListener("submit", (e) => {
@@ -163,7 +193,7 @@ class LessonFinderWidget {
       this.submitQuery(input.value);
     });
 
-    panel.append(header, grass, body, form);
+    panel.append(header, body, form);
     container.append(greeting, launcher, panel);
     this.shadow.appendChild(container);
     this.syncGreeting();
@@ -227,10 +257,29 @@ class LessonFinderWidget {
 
     const reply = searchLessons(query);
     this.addAssistantBubble(reply.text);
+    if (reply.lessons.length > 0) {
+      this.addResultsHeader(reply.lessons.length);
+    }
     for (const lesson of reply.lessons) {
       this.addLessonCard(lesson);
     }
     this.scrollToBottom();
+  }
+
+  private addResultsHeader(count: number): void {
+    const head = document.createElement("div");
+    head.className = "elf-results-head";
+
+    const label = document.createElement("p");
+    label.className = "elf-results-label";
+    label.textContent = describeMatchCount(count);
+
+    const rule = document.createElement("span");
+    rule.className = "elf-results-rule";
+    rule.setAttribute("aria-hidden", "true");
+
+    head.append(label, rule);
+    this.body.appendChild(head);
   }
 
   private addUserBubble(text: string): void {
@@ -252,6 +301,14 @@ class LessonFinderWidget {
   private addLessonCard(lesson: Lesson): void {
     const card = document.createElement("div");
     card.className = "elf-card";
+
+    const photo = document.createElement("div");
+    photo.className = "elf-card-photo";
+    photo.setAttribute("aria-hidden", "true");
+    photo.textContent = "lesson photo";
+
+    const content = document.createElement("div");
+    content.className = "elf-card-body";
 
     const top = document.createElement("div");
     top.className = "elf-card-top";
@@ -275,17 +332,17 @@ class LessonFinderWidget {
 
     const standard = document.createElement("span");
     standard.className = "elf-standard";
-    standard.textContent = lesson.ngsssStandards.join(", ");
+    standard.textContent = lesson.ngsssStandards.join(" · ");
 
     const links = document.createElement("div");
     links.className = "elf-card-links";
 
     const viewLink = document.createElement("a");
-    viewLink.className = "elf-card-link";
+    viewLink.className = "elf-card-link elf-card-link-view";
     const viewHref = lessonPlanViewUrl(lesson);
     viewLink.target = "_blank";
     viewLink.rel = "noopener noreferrer";
-    viewLink.textContent = "View lesson →";
+    viewLink.textContent = "View lesson";
     if (viewHref.startsWith("https://")) {
       viewLink.href = viewHref;
     } else {
@@ -296,7 +353,7 @@ class LessonFinderWidget {
     const downloadHref = lessonPlanDownloadUrl(lesson);
     if (downloadHref) {
       const downloadLink = document.createElement("a");
-      downloadLink.className = "elf-card-link";
+      downloadLink.className = "elf-card-link elf-card-link-download";
       downloadLink.target = "_blank";
       downloadLink.rel = "noopener noreferrer";
       downloadLink.textContent = "Download";
@@ -307,16 +364,17 @@ class LessonFinderWidget {
     const folderHref = lessonMaterialsFolderUrl(lesson);
     if (folderHref) {
       const folderLink = document.createElement("a");
-      folderLink.className = "elf-card-link";
+      folderLink.className = "elf-card-link elf-card-link-materials";
       folderLink.target = "_blank";
       folderLink.rel = "noopener noreferrer";
-      folderLink.textContent = "View all lesson materials";
+      folderLink.textContent = "All materials →";
       folderLink.href = folderHref;
       links.appendChild(folderLink);
     }
 
     footer.append(standard, links);
-    card.append(top, summary, footer);
+    content.append(top, summary, footer);
+    card.append(photo, content);
     this.body.appendChild(card);
   }
 
