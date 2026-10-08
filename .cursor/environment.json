@@ -1,0 +1,11 @@
+{
+  "name": "Everglades Lesson Finder",
+  "install": "npm --prefix widget ci",
+  "terminals": [
+    {
+      "name": "widget-dev",
+      "command": "npm --prefix widget run dev -- --host 0.0.0.0 --port 5183"
+    }
+  ],
+  "ports": [5183]
+}
