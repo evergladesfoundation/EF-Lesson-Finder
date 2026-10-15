@@ -256,14 +256,14 @@ class LessonFinderWidget {
     this.input.value = "";
 
     const reply = searchLessons(query);
-    this.addAssistantBubble(reply.text);
+    const responseStart = this.addAssistantBubble(reply.text);
     if (reply.lessons.length > 0) {
       this.addResultsHeader(reply.lessons.length);
     }
     for (const lesson of reply.lessons) {
       this.addLessonCard(lesson);
     }
-    this.scrollToBottom();
+    this.scrollResponseIntoView(responseStart);
   }
 
   private addResultsHeader(count: number): void {
@@ -287,15 +287,14 @@ class LessonFinderWidget {
     bubble.className = "elf-bubble elf-user";
     bubble.textContent = text;
     this.body.appendChild(bubble);
-    this.scrollToBottom();
   }
 
-  private addAssistantBubble(text: string): void {
+  private addAssistantBubble(text: string): HTMLDivElement {
     const bubble = document.createElement("div");
     bubble.className = "elf-bubble elf-assistant";
     bubble.textContent = text;
     this.body.appendChild(bubble);
-    this.scrollToBottom();
+    return bubble;
   }
 
   private addLessonCard(lesson: Lesson): void {
@@ -387,6 +386,22 @@ class LessonFinderWidget {
   private scrollToBottom(): void {
     requestAnimationFrame(() => {
       this.body.scrollTop = this.body.scrollHeight;
+    });
+  }
+
+  // A long reply used to land at the bottom of the transcript, so the
+  // opening line and the first lesson plans sat above the panel. Pin the
+  // start of the new reply to the top of the transcript instead.
+  private scrollResponseIntoView(anchor: HTMLElement): void {
+    requestAnimationFrame(() => {
+      const paddingTop = parseFloat(getComputedStyle(this.body).paddingTop) || 0;
+      const top =
+        anchor.offsetParent === this.body
+          ? anchor.offsetTop
+          : anchor.getBoundingClientRect().top -
+            this.body.getBoundingClientRect().top +
+            this.body.scrollTop;
+      this.body.scrollTop = Math.max(0, top - paddingTop);
     });
   }
 }
