@@ -50,7 +50,7 @@ function assert(condition, message) {
   if (!condition) failures.push(message);
 }
 
-assert(LESSONS.length >= 40, `expected 40+ Active lessons, got ${LESSONS.length}`);
+assert(LESSONS.length >= 44, `expected 44+ Active lessons (toolkit + climate), got ${LESSONS.length}`);
 
 const grade4 = LESSONS.filter((l) => l.gradeMin === 4 && l.gradeMax === 4);
 const grade4Titles = grade4.map((l) => l.title);
@@ -216,7 +216,7 @@ const foodChains = LESSONS.find((l) => l.title === "Everglades Food Chains");
 assert(Boolean(foodChains), "Everglades Food Chains must be in the catalog");
 assert(
   JSON.stringify(foodChains?.ngsssStandards) ===
-    JSON.stringify(["SC.4.L.17.3", "SC.4.L.17.4", "MAFS.K12.MP.2.1"]),
+    JSON.stringify(["SC.4.L.17.3", "SC.4.L.17.4", "ELA.4.C.1.4", "ELA.4.C.5.1", "MAFS.K12.MP.2.1"]),
   `Everglades Food Chains must keep every NGSSS code, got: ${foodChains?.ngsssStandards.join(" · ")}`,
 );
 assert(
@@ -240,6 +240,44 @@ const prek = LESSONS.find((l) => l.id === "PK.1");
 assert(
   Array.isArray(prek?.apUnitTitles) && prek.apUnitTitles.length === 0,
   "Pre-K lessons should have an empty apUnitTitles list",
+);
+
+const expectedClimateTitles = [
+  "How Weather and Climate Influence the Everglades",
+  "How Weather and Climate Influences the Everglades",
+  "The Greenhouse Effect and Our Warming Planet",
+  "Exploring the Carbon Cycle: Everglades Carbon Quest",
+  "The Science Behind Rising Sea Levels",
+  "King Tides: Preparing for Coastal Changes",
+  "SHIELD(S): Sea-Level Rise Impacts and Solutions",
+  "Threats to the Everglades",
+];
+function climateTitlePresent(lessonTitle, expected) {
+  const needle = expected.toLowerCase().replace(/influences/, "influence");
+  const have = lessonTitle.toLowerCase().replace(/influences/, "influence");
+  return have === needle || have.includes(needle) || needle.includes(have);
+}
+const presentClimateTitles = LESSONS.filter((l) =>
+  expectedClimateTitles.some((expected) => climateTitlePresent(l.title, expected)),
+).map((l) => l.title);
+assert(
+  presentClimateTitles.length >= 1,
+  `expected Climate Lessons titles in LESSONS, found none of: ${expectedClimateTitles.join("; ")}`,
+);
+
+const climateWeather = LESSONS.find((l) => /how weather and climate influence/i.test(l.title));
+assert(Boolean(climateWeather), "How Weather and Climate Influence the Everglades must be in the catalog");
+assert(
+  climateWeather?.gradeMin === 6 && climateWeather?.gradeMax === 12,
+  `climate weather lesson should be grades 6-12, got ${climateWeather?.gradeRange} (${climateWeather?.gradeMin}-${climateWeather?.gradeMax})`,
+);
+assert(
+  Array.isArray(climateWeather?.apUnitTitles) && climateWeather.apUnitTitles.length > 0,
+  "climate weather lesson should match the AP crosswalk once indexed",
+);
+assert(
+  JSON.stringify(climateWeather?.apUnitNumbers) === JSON.stringify([4, 9]),
+  `climate weather lesson should map to AP units 4 and 9, got: ${JSON.stringify(climateWeather?.apUnitNumbers)}`,
 );
 
 const gatorsLesson = LESSONS.find((l) => l.title === "Don't Feed the Gators!");
@@ -452,6 +490,28 @@ assert(
   `APES unit 5 should include Tragedy of the Commons, got: ${apUnit5.lessons.map((l) => l.title).join("; ")}`,
 );
 
+const sixth = searchLessons("6th grade lessons");
+assert(
+  sixth.lessons.some((l) => /how weather and climate influence/i.test(l.title)),
+  `6th grade search should include the climate 6-12 weather lesson, got: ${sixth.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const climateQuery = searchLessons("How Weather and Climate Influence the Everglades");
+assert(
+  climateQuery.lessons.some((l) => /how weather and climate influence/i.test(l.title)),
+  `title search should find the climate weather lesson, got: ${climateQuery.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const apUnit9 = searchLessons("AP unit 9");
+assert(
+  apUnit9.lessons.some((l) => /how weather and climate influence/i.test(l.title)),
+  `AP unit 9 should include the climate weather lesson, got: ${apUnit9.lessons.map((l) => l.title).join("; ")}`,
+);
+assert(
+  apUnit9.lessons.every((l) => l.apUnitNumbers.includes(9)),
+  "AP unit 9 search mixed in lessons without that unit",
+);
+
 if (failures.length) {
   console.error(`search-smoke failed (${failures.length}):`);
   for (const failure of failures) console.error(" -", failure);
@@ -459,5 +519,5 @@ if (failures.length) {
 }
 
 console.log(
-  `search-smoke passed (${LESSONS.length} lessons; 4th grade → ${fourth.lessons.map((l) => l.title).join(", ")})`,
+  `search-smoke passed (${LESSONS.length} lessons; climate → ${presentClimateTitles.join(", ")}; 4th grade → ${fourth.lessons.map((l) => l.title).join(", ")})`,
 );
