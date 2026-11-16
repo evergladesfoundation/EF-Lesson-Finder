@@ -37,10 +37,11 @@ GRADE_RANGE_RE = re.compile(
 )
 
 # Line-leading published codes with descriptions, e.g. "SC.6.E.7.6 - Differentiate..."
+# NGSS codes use a two- or three-letter domain (HS-LS2-7, MS-ESS3-5).
 STANDARD_LINE_RE = re.compile(
     r"^\s*("
     r"[A-Z]{2,5}(?:\.[A-Za-z0-9]+)+(?:\.[a-z])?"
-    r"|[A-Z]{2}-[A-Z]{3}\d+-\d+"
+    r"|[A-Z]{2}-[A-Z]{2,3}\d+-\d+"
     r")\s*[-–—]",
     re.M,
 )
@@ -135,18 +136,24 @@ def grade_band(grade_col: object, grade_sort: object) -> tuple[str, int, int]:
 
 
 def concept_label(raw: object) -> str:
+    """Map a list of Everglades concept numbers. Leave other labels unchanged.
+
+    "4, 5" becomes the published concept sentences. "NOAA Climate Principles 1, 2, 4"
+    stays that label, so the trailing numbers are not treated as concept ids.
+    """
     if not raw:
         return ""
-    names: list[str] = []
-    for piece in str(raw).split(","):
-        piece = piece.strip()
-        if not piece:
-            continue
-        try:
-            names.append(CONCEPTS[int(piece)])
-        except (TypeError, ValueError, KeyError):
-            names.append(piece)
-    return " ".join(names)
+    pieces = [" ".join(piece.split()) for piece in str(raw).split(",") if piece.strip()]
+    if pieces and all(piece.isdigit() and int(piece) in CONCEPTS for piece in pieces):
+        seen: set[int] = set()
+        names: list[str] = []
+        for piece in pieces:
+            number = int(piece)
+            if number not in seen:
+                seen.add(number)
+                names.append(CONCEPTS[number])
+        return " ".join(names)
+    return ", ".join(pieces)
 
 
 def fallback_summary(title: str, grade_range: str, theme: str) -> str:
