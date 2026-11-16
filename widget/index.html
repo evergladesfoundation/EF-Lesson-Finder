@@ -3,77 +3,174 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Everglades Literacy Program (demo host page)</title>
-    <style>
-      body {
-        margin: 0;
-        font-family: -apple-system, "Segoe UI", sans-serif;
-        color: #1a1a1a;
-        min-height: 100vh;
-        background: linear-gradient(180deg, #cfe3dc, #eaf1ee 42%, #f4f1e6);
-      }
-      .demo-nav {
-        background: #1c95a6;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        padding: 0 24px;
-        height: 88px;
-      }
-      .demo-logo {
-        background: #a4c639;
-        color: #fff;
-        font-weight: 700;
-        padding: 10px 16px;
-        border-radius: 4px;
-        font-size: 14px;
-        line-height: 1.2;
-      }
-      .demo-nav-links {
-        display: flex;
-        gap: 20px;
-        font-size: 13px;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-      main {
-        max-width: 720px;
-        margin: 48px auto;
-        padding: 0 24px 200px;
-        line-height: 1.6;
-      }
-      h1 {
-        font-size: 28px;
-      }
-    </style>
+    <title>Everglades Literacy Program | Everglades Foundation</title>
+    <link rel="stylesheet" href="/host.css" />
   </head>
   <body>
-    <div class="demo-nav">
-      <div class="demo-logo">THE EVERGLADES<br />FOUNDATION</div>
-      <div class="demo-nav-links">
-        <span>About</span>
-        <span>Our Impact</span>
-        <span>Teacher Toolkit</span>
-        <span>Champion Schools</span>
+    <header class="site-header">
+      <div class="header-top">
+        <a class="brand" href="https://www.evergladesliteracy.org/">
+          <img src="/brand/mark.png" alt="The Everglades Foundation" />
+          <span class="brand-name">EVERGLADES LITERACY</span>
+        </a>
+        <div class="header-tools">
+          <div class="social">
+            <a href="https://www.facebook.com/EvergladesLiteracyProgram" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 9h3V6h-3c-2.2 0-4 1.8-4 4v2H8v3h2v7h3v-7h2.6l.4-3H13v-2c0-.6.4-1 1-1z"/></svg>
+            </a>
+            <a href="https://www.youtube.com/channel/UCI58NbIhK8Rod0puba2zMZw" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 12.2s0-3.2-.4-4.6c-.2-.9-.9-1.6-1.8-1.8C19.2 5.4 12 5.4 12 5.4s-7.2 0-8.8.4c-.9.2-1.6.9-1.8 1.8C1 9 1 12.2 1 12.2s0 3.2.4 4.6c.2.9.9 1.6 1.8 1.8 1.6.4 8.8.4 8.8.4s7.2 0 8.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.4.4-4.6.4-4.6zM9.8 15.5v-6.6l6.2 3.3-6.2 3.3z"/></svg>
+            </a>
+          </div>
+          <a class="give" href="https://www.evergladesliteracy.org/give">GIVE A GIFT</a>
+          <form class="site-search" action="https://www.evergladesliteracy.org/search" role="search">
+            <input name="q" type="search" placeholder="Search..." aria-label="Search" />
+            <button type="submit" aria-label="Submit search">
+              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m15.7 14.6 3.3 3.3a.2.2 0 0 1 0 .3l-.8.8a.2.2 0 0 1-.3 0l-3.3-3.3a6 6 0 1 1 1.1-1.1zM11 16a5 5 0 1 0 0-10 5 5 0 0 0 0 10"/></svg>
+            </button>
+          </form>
+          <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">MENU</button>
+        </div>
       </div>
-    </div>
-    <main>
-      <h1>Teacher Toolkit</h1>
-      <p>
-        This page stands in for a real page on evergladesliteracy.org, so the
-        Lesson Finder widget can be tested in a realistic surrounding layout.
-        The widget mounts itself via a single script tag near the end of
-        <code>body</code> — exactly how it will be embedded through Squarespace
-        Code Injection in production.
-      </p>
-      <p>
-        Try opening the widget in the bottom-right corner, click a quick-start
-        prompt, then try typing a free-text question like
-        <em>"lessons about mangroves"</em> or <em>"SC.5.L.17.1"</em>.
-      </p>
-    </main>
+      <nav id="site-nav" class="nav-row" aria-label="Primary">
+        <a href="https://www.evergladesliteracy.org/about">ABOUT</a>
+        <a href="https://www.evergladesliteracy.org/our-impact">OUR IMPACT</a>
+        <a href="https://www.evergladesliteracy.org/teacher-toolkit" aria-current="page">TEACHER TOOLKIT</a>
+        <a href="https://www.evergladesliteracy.org/champions">CHAMPION SCHOOLS</a>
+        <a href="https://www.evergladesliteracy.org/instructional-resources">ADDITIONAL RESOURCES</a>
+        <a href="https://www.evergladesliteracy.org/dual-language">DUAL LANGUAGE</a>
+        <a href="https://www.evergladesliteracy.org/everglades-ecoquest">EVERGLADES ECOQUEST</a>
+        <a href="https://www.evergladesliteracy.org/getinvolved">GET INVOLVED</a>
+      </nav>
+    </header>
 
+    <section class="hero" aria-label="Featured video">
+      <div class="hero-frame">
+        <iframe
+          src="https://www.youtube-nocookie.com/embed/e5BSSzgX6sQ"
+          title="Become an Everglades Champion School"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </section>
+
+    <section class="about" id="program">
+      <p class="about-kicker">WHAT IS THE EVERGLADES</p>
+      <h1>Literacy Program ?</h1>
+      <div class="about-copy">
+        <p>
+          The Everglades Literacy Program empowers the next generation of conservation
+          stewards by investing in teachers to drive cultural change within schools for the
+          benefit of local and ecological communities.
+        </p>
+        <p>
+          As the vital efforts of Everglades restoration takes center stage, it is important to
+          recognize the key to long-term sustainability rests on the shoulders of the next
+          generation understanding the ecological and economic value of the Everglades.
+        </p>
+        <p>
+          The Everglades Literacy Program gives teachers the tools and knowledge to teach and
+          move forward in educating current and future generations. The program provides
+          teachers, students, schools, and families with:
+        </p>
+        <ul>
+          <li>STEM-based professional development – Everglades Literacy Teacher Trainings.</li>
+          <li>Free lessons and materials for each teacher who attends a Teacher Training.</li>
+          <li>Free, online PreK-12 Teacher Toolkit with comprehensive Everglades lessons that align with State Academic Standards.</li>
+          <li>Additional instructional resources for the classroom or virtual classroom.</li>
+          <li>PreK-12 Everglades Champion Schools Program – designed to showcase and recognize exceptional Everglades literacy efforts in a school.</li>
+          <li>Classroom presentations, participation in science nights, field trips, and other school events.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="feature-row" aria-label="Program paths">
+      <article class="feature feature-coral">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/><path d="m5 19 1.5-1.5"/></svg>
+        <h2>PREK-12 TEACHER<br />TOOLKIT</h2>
+        <p>Explore the free, standards-aligned, PreK-12 interdisciplinary Everglades curriculum.</p>
+        <a href="https://www.evergladesliteracy.org/teacher-toolkit">Find Out More</a>
+      </article>
+      <article class="feature feature-purple">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h2a3 3 0 0 1 0 6h-2"/><path d="M7 6H5a3 3 0 0 0 0 6h2"/></svg>
+        <h2>BECOME A<br />CHAMPION SCHOOL</h2>
+        <p>Learn more about how to become an Everglades Champion School and fill out the Intent to Apply.</p>
+        <a href="https://www.evergladesliteracy.org/champions">Find Out More</a>
+      </article>
+      <article class="feature feature-blue">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>
+        <h2>ADDITIONAL<br />INSTRUCTIONAL RESOURCES</h2>
+        <p>Check out our bite-sized, fun and engaging supplemental lessons that can be implemented over any digital platform.</p>
+        <a href="https://www.evergladesliteracy.org/instructional-resources">Find Out More</a>
+      </article>
+      <article class="feature feature-green">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20c-4.4 0-7-3-7-6.4C5 10 7.2 8.2 9.4 8.2c1 0 1.8.4 2.6 1.1.8-.7 1.6-1.1 2.6-1.1C17 8.2 19 10 19 13.6 19 17 16.4 20 12 20z"/><path d="M12 8.2c.3-1.8 1.5-3.2 3.2-3.7"/></svg>
+        <h2>REQUEST A<br />TEACHER TRAINING</h2>
+        <p>Contact us to coordinate an Everglades Literacy Teacher Training for your school or district.</p>
+        <a href="https://www.evergladesliteracy.org/getinvolved">Find Out More</a>
+      </article>
+    </section>
+
+    <section class="toolkit" id="toolkit">
+      <p class="toolkit-kicker">DISCOVER THE EVERGLADES LITERACY PROGRAM'S</p>
+      <div class="toolkit-rule"></div>
+      <h2>PREK-12 Teacher Toolkit</h2>
+      <div class="grades">
+        <a class="grade" href="https://www.evergladesliteracy.org/kindergarten">
+          <img src="/brand/safari.png" alt="" />
+          Everglades Safari<br />Kindergarten
+        </a>
+        <a class="grade" href="https://www.evergladesliteracy.org/first-grade">
+          <img src="/brand/oak.png" alt="" />
+          Habitat Heroes<br />1st Grade
+        </a>
+        <a class="grade" href="https://www.evergladesliteracy.org/second-grade">
+          <img src="/brand/gator.png" alt="" />
+          Keystone Species<br />2nd Grade
+        </a>
+        <a class="grade" href="https://www.evergladesliteracy.org/third-grade">
+          <img src="/brand/palm.png" alt="" />
+          Botany &amp; Beyond<br />3rd Grade
+        </a>
+      </div>
+      <a class="see-all" href="https://www.evergladesliteracy.org/teacher-toolkit">SEE ALL CURRICULUM</a>
+    </section>
+
+    <section class="partners">
+      <h2>THE FOLLOWING PARTNERS WHO SUPPORT THE EVERGLADES LITERACY PROGRAM AND INITIATIVES</h2>
+      <ul>
+        <li>The Micky and Madeleine Arison Family Foundation</li>
+        <li>Gerald A. &amp; Karen A. Kolschowsky Foundation</li>
+        <li>Glenn W. Bailey Foundation</li>
+      </ul>
+      <p>
+        If your foundation or corporation is interested in supporting Everglades Literacy, please contact
+        Jim Burke, Vice President of Advancement,
+        <a href="mailto:jburke@evergladesfoundation.org">jburke@evergladesfoundation.org</a>.
+      </p>
+    </section>
+
+    <footer class="site-footer">
+      <h2>CONTACT US</h2>
+      <p>
+        18001 Old Cutler Road, Suite 625<br />
+        Palmetto Bay, Florida 33157<br />
+        Phone: (305) 251-0001<br />
+        <a href="mailto:Education@EvergladesFoundation.org">Education@EvergladesFoundation.org</a>
+      </p>
+      <p>© 2026 by The Everglades Foundation</p>
+    </footer>
+
+    <script>
+      const toggle = document.querySelector(".nav-toggle");
+      const nav = document.querySelector("#site-nav");
+      toggle.addEventListener("click", () => {
+        const open = nav.classList.toggle("is-open");
+        toggle.setAttribute("aria-expanded", String(open));
+      });
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

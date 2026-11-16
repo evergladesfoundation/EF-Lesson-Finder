@@ -5,8 +5,8 @@
   --ink: #14342d;
   --body: #46605a;
   --muted: #8a9187;
-  --primary: #0e6b6b;
-  --primary-hover: #094f4f;
+  --primary: #04b5cc;
+  --primary-hover: #0397ab;
   --accent: #7a984a;
   --surface: #fffefa;
   --tray: #f4f1e6;
@@ -37,7 +37,7 @@
   height: auto;
   padding: 12px 18px 12px 14px;
   border-radius: 999px;
-  background: #14342d;
+  background: #04b5cc;
   color: #eaf3e6;
   border: none;
   cursor: pointer;
@@ -51,7 +51,7 @@
 }
 
 .elf-launcher:hover {
-  background: #0b241f;
+  background: #0397ab;
 }
 
 .elf-launcher-mark {
@@ -191,7 +191,7 @@
 }
 
 .elf-header {
-  background: linear-gradient(115deg, #0e6b6b 0%, #14837c 48%, #7a984a 130%);
+  background: #04b5cc;
   color: #f2fbf6;
   padding: 24px 24px 34px;
   position: relative;
@@ -348,7 +348,7 @@
 }
 
 .elf-chip:hover {
-  background: #0e6b6b;
+  background: #04b5cc;
   color: #f2fbf6;
 }
 
@@ -422,7 +422,7 @@
 .elf-badge {
   flex-shrink: 0;
   background: transparent;
-  color: #0e6b6b;
+  color: #0397ab;
   font-family: var(--mono);
   font-size: 10.5px;
   font-weight: 500;
@@ -517,12 +517,12 @@
 }
 
 .elf-card-link-view {
-  background: #0e6b6b;
+  background: #04b5cc;
   color: #f2fbf6;
 }
 
 .elf-card-link-view:hover {
-  background: #094f4f;
+  background: #0397ab;
   color: #f2fbf6;
 }
 
@@ -582,15 +582,15 @@
 
 .elf-input:focus {
   outline: none;
-  border-color: #14837c;
-  box-shadow: 0 0 0 3px rgba(20, 131, 124, 0.16);
+  border-color: #04b5cc;
+  box-shadow: 0 0 0 3px rgba(4, 181, 204, 0.2);
 }
 
 .elf-send {
   width: 46px;
   height: 46px;
   flex-shrink: 0;
-  background: linear-gradient(150deg, #14837c, #0e6b6b);
+  background: #04b5cc;
   color: #ffffff;
   border: none;
   border-radius: 50%;
