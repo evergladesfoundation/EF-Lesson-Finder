@@ -196,16 +196,16 @@ img {
 }
 
 .hero {
-  background: #fff;
-  padding: 28px 16px 10px;
+  background: #04181c;
+  padding: 0;
+  width: 100%;
 }
 
 .hero-frame {
-  width: min(980px, 100%);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   aspect-ratio: 16 / 9;
   background: #04181c;
-  box-shadow: 0 18px 40px -28px rgba(4, 40, 48, 0.7);
 }
 
 .hero-frame iframe {
@@ -519,9 +519,5 @@ img {
 
   .feature-row {
     grid-template-columns: 1fr;
-  }
-
-  .hero {
-    padding: 16px 12px 0;
   }
 }
