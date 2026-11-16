@@ -40,7 +40,7 @@ GRADE_RANGE_RE = re.compile(
 STANDARD_LINE_RE = re.compile(
     r"^\s*("
     r"[A-Z]{2,5}(?:\.[A-Za-z0-9]+)+(?:\.[a-z])?"
-    r"|[A-Z]{2}-[A-Z]{3}\d+-\d+"
+    r"|[A-Z]{2}-[A-Z]{2,3}\d+-\d+"
     r")\s*[-–—]",
     re.M,
 )

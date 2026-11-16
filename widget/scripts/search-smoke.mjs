@@ -280,6 +280,49 @@ assert(
   `climate weather lesson should map to AP units 4 and 9, got: ${JSON.stringify(climateWeather?.apUnitNumbers)}`,
 );
 
+const greenhouse = LESSONS.find((l) => l.title === "The Greenhouse Effect and Our Warming Planet");
+assert(Boolean(greenhouse), "The Greenhouse Effect and Our Warming Planet must be in the catalog");
+assert(
+  greenhouse?.id === "CL.2" && greenhouse?.gradeMin === 6 && greenhouse?.gradeMax === 12,
+  `greenhouse lesson should be CL.2 grades 6-12, got ${greenhouse?.id} ${greenhouse?.gradeRange}`,
+);
+assert(
+  greenhouse?.ngsssStandards.includes("SC.6.E.7.9") &&
+    greenhouse?.ngsssStandards.includes("MA.7.DP.1.1") &&
+    greenhouse?.ngsssStandards.includes("HS-LS2-7"),
+  `greenhouse lesson dropped published standards, got: ${greenhouse?.ngsssStandards.join(" · ")}`,
+);
+assert(
+  JSON.stringify(greenhouse?.apUnitNumbers) === JSON.stringify([6, 7, 9]),
+  `greenhouse lesson should map to AP units 6, 7, and 9, got: ${JSON.stringify(greenhouse?.apUnitNumbers)}`,
+);
+assert(
+  Boolean(greenhouse?.pdfUrl) && Boolean(greenhouse?.lessonUrl),
+  "greenhouse lesson needs a Drive folder and lesson-plan PDF",
+);
+
+const carbon = LESSONS.find((l) => l.title === "Exploring the Carbon Cycle: Everglades Carbon Quest");
+assert(Boolean(carbon), "Exploring the Carbon Cycle: Everglades Carbon Quest must be in the catalog");
+assert(
+  carbon?.id === "CL.3" && carbon?.gradeMin === 6 && carbon?.gradeMax === 12,
+  `carbon-cycle lesson should be CL.3 grades 6-12, got ${carbon?.id} ${carbon?.gradeRange}`,
+);
+assert(
+  carbon?.ngsssStandards.includes("SC.8.L.18.3") &&
+    carbon?.ngsssStandards.includes("SC.912.L.17.10") &&
+    carbon?.ngsssStandards.includes("MS-LS2-3") &&
+    carbon?.ngsssStandards.includes("HS-LS2-5"),
+  `carbon-cycle lesson dropped published standards, got: ${carbon?.ngsssStandards.join(" · ")}`,
+);
+assert(
+  JSON.stringify(carbon?.apUnitNumbers) === JSON.stringify([1, 9]),
+  `carbon-cycle lesson should map to AP units 1 and 9, got: ${JSON.stringify(carbon?.apUnitNumbers)}`,
+);
+assert(
+  Boolean(carbon?.pdfUrl) && Boolean(carbon?.lessonUrl),
+  "carbon-cycle lesson needs a Drive folder and lesson-plan PDF",
+);
+
 const gatorsLesson = LESSONS.find((l) => l.title === "Don't Feed the Gators!");
 assert(
   Array.isArray(gatorsLesson?.apUnitTitles) && gatorsLesson.apUnitTitles.length === 0,
@@ -494,6 +537,18 @@ const sixth = searchLessons("6th grade lessons");
 assert(
   sixth.lessons.some((l) => /how weather and climate influence/i.test(l.title)),
   `6th grade search should include the climate 6-12 weather lesson, got: ${sixth.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const greenhouseQuery = searchLessons("greenhouse effect");
+assert(
+  greenhouseQuery.lessons.some((l) => l.title === "The Greenhouse Effect and Our Warming Planet"),
+  `greenhouse effect search should find the climate lesson, got: ${greenhouseQuery.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const carbonQuery = searchLessons("carbon cycle");
+assert(
+  carbonQuery.lessons.some((l) => l.title === "Exploring the Carbon Cycle: Everglades Carbon Quest"),
+  `carbon cycle search should find the climate lesson, got: ${carbonQuery.lessons.map((l) => l.title).join("; ")}`,
 );
 
 const climateQuery = searchLessons("How Weather and Climate Influence the Everglades");
