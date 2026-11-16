@@ -1,0 +1,6 @@
+# Local secrets — never commit these
+.env
+.env.*
+!.env.example
+ACCOUNT.local.md
+*.local.md
