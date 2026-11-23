@@ -337,6 +337,89 @@ assert(
   "carbon-cycle lesson needs a Drive folder and lesson-plan PDF",
 );
 
+const climateIds = LESSONS.filter((l) => /^CL\.\d+$/.test(l.id)).map((l) => l.id);
+assert(
+  climateIds.join(",") === "CL.1,CL.2,CL.3,CL.4,CL.5,CL.6",
+  `expected climate lessons CL.1 through CL.6, got: ${climateIds.join(", ")}`,
+);
+
+const seaLevel = LESSONS.find((l) => l.id === "CL.4");
+assert(seaLevel?.title === "The Science Behind Rising Sea Levels", "CL.4 title changed");
+assert(
+  seaLevel?.gradeMin === 6 && seaLevel?.gradeMax === 12,
+  `CL.4 should be grades 6-12, got ${seaLevel?.gradeRange}`,
+);
+assert(
+  seaLevel?.ngsssStandards.includes("SC.7.E.6.4") &&
+    seaLevel?.ngsssStandards.includes("MS-ESS3-5") &&
+    seaLevel?.ngsssStandards.includes("HS-ESS2-2"),
+  `CL.4 dropped published standards, got: ${seaLevel?.ngsssStandards.join(" · ")}`,
+);
+assert(
+  JSON.stringify(seaLevel?.apUnitNumbers) === JSON.stringify([9]),
+  `CL.4 should map to AP unit 9, got: ${JSON.stringify(seaLevel?.apUnitNumbers)}`,
+);
+assert(
+  seaLevel?.fundamentalConcept === "NOAA Climate Principles 5, 6, 7",
+  `CL.4 should keep NOAA climate principles, got: ${seaLevel?.fundamentalConcept}`,
+);
+assert(
+  Boolean(seaLevel?.pdfUrl) && Boolean(seaLevel?.lessonUrl),
+  "CL.4 needs a Drive folder and lesson-plan PDF",
+);
+
+const kingTides = LESSONS.find((l) => l.id === "CL.5");
+assert(kingTides?.title === "King Tides: Preparing for Coastal Changes", "CL.5 title changed");
+assert(
+  kingTides?.gradeMin === 6 && kingTides?.gradeMax === 12,
+  `CL.5 should be grades 6-12, got ${kingTides?.gradeRange}`,
+);
+assert(
+  kingTides?.ngsssStandards.includes("SC.8.E.5.9") &&
+    kingTides?.ngsssStandards.includes("MA.6.DP.1.AP.2b") &&
+    kingTides?.ngsssStandards.includes("MS-ESS1-1") &&
+    kingTides?.ngsssStandards.includes("HS-ESS3-1"),
+  `CL.5 dropped published standards, got: ${kingTides?.ngsssStandards.join(" · ")}`,
+);
+assert(
+  JSON.stringify(kingTides?.apUnitNumbers) === JSON.stringify([9]),
+  `CL.5 should map to AP unit 9, got: ${JSON.stringify(kingTides?.apUnitNumbers)}`,
+);
+assert(
+  kingTides?.fundamentalConcept === "NOAA Climate Principles 5, 6, 7",
+  `CL.5 should keep NOAA climate principles, got: ${kingTides?.fundamentalConcept}`,
+);
+assert(
+  Boolean(kingTides?.pdfUrl) && Boolean(kingTides?.lessonUrl),
+  "CL.5 needs a Drive folder and lesson-plan PDF",
+);
+
+const shield = LESSONS.find((l) => l.id === "CL.6");
+assert(shield?.title === "SHIELD(S): Sea-Level Rise Impacts and Solutions", "CL.6 title changed");
+assert(
+  shield?.gradeMin === 6 && shield?.gradeMax === 12,
+  `CL.6 should be grades 6-12, got ${shield?.gradeRange}`,
+);
+assert(
+  shield?.ngsssStandards.includes("ELA.8.C.4.1") &&
+    shield?.ngsssStandards.includes("MS-ESS3-3") &&
+    shield?.ngsssStandards.includes("MS-ESS3-2") &&
+    shield?.ngsssStandards.includes("HS-ESS3-4"),
+  `CL.6 dropped published standards, got: ${shield?.ngsssStandards.join(" · ")}`,
+);
+assert(
+  JSON.stringify(shield?.apUnitNumbers) === JSON.stringify([6, 9]),
+  `CL.6 should map to AP units 6 and 9, got: ${JSON.stringify(shield?.apUnitNumbers)}`,
+);
+assert(
+  shield?.fundamentalConcept === "NOAA Climate Principles 6, 7",
+  `CL.6 should keep NOAA climate principles, got: ${shield?.fundamentalConcept}`,
+);
+assert(
+  Boolean(shield?.pdfUrl) && Boolean(shield?.lessonUrl),
+  "CL.6 needs a Drive folder and lesson-plan PDF",
+);
+
 const gatorsLesson = LESSONS.find((l) => l.title === "Don't Feed the Gators!");
 assert(
   Array.isArray(gatorsLesson?.apUnitTitles) && gatorsLesson.apUnitTitles.length === 0,
@@ -563,6 +646,24 @@ const carbonQuery = searchLessons("carbon cycle");
 assert(
   carbonQuery.lessons.some((l) => l.title === "Exploring the Carbon Cycle: Everglades Carbon Quest"),
   `carbon cycle search should find the climate lesson, got: ${carbonQuery.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const seaQuery = searchLessons("rising sea levels");
+assert(
+  seaQuery.lessons.some((l) => l.id === "CL.4"),
+  `rising sea levels search should find CL.4, got: ${seaQuery.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const kingQuery = searchLessons("king tides");
+assert(
+  kingQuery.lessons.some((l) => l.id === "CL.5"),
+  `king tides search should find CL.5, got: ${kingQuery.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const shieldQuery = searchLessons("SHIELD sea-level rise solutions");
+assert(
+  shieldQuery.lessons.some((l) => l.id === "CL.6"),
+  `SHIELD search should find CL.6, got: ${shieldQuery.lessons.map((l) => l.title).join("; ")}`,
 );
 
 const climateQuery = searchLessons("How Weather and Climate Influence the Everglades");
