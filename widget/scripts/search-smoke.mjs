@@ -682,6 +682,31 @@ assert(
   "AP unit 9 search mixed in lessons without that unit",
 );
 
+const tidesQuery = searchLessons("tides");
+assert(
+  tidesQuery.lessons.some((l) => l.id === "CL.5"),
+  `tides should return King Tides, got: ${tidesQuery.lessons.map((l) => l.title).join("; ")}`,
+);
+const tideQuery = searchLessons("tide");
+assert(
+  tideQuery.lessons.some((l) => l.id === "CL.5"),
+  `tide should return King Tides, got: ${tideQuery.lessons.map((l) => l.title).join("; ")}`,
+);
+
+const missedTags = [];
+for (const lesson of LESSONS) {
+  for (const tag of lesson.topics) {
+    const found = searchLessons(tag);
+    if (!found.lessons.some((hit) => hit.id === lesson.id)) {
+      missedTags.push(`${lesson.id} "${tag}"`);
+    }
+  }
+}
+assert(
+  missedTags.length === 0,
+  `topic tag search missed ${missedTags.length} lesson tags: ${missedTags.slice(0, 12).join("; ")}`,
+);
+
 if (failures.length) {
   console.error(`search-smoke failed (${failures.length}):`);
   for (const failure of failures) console.error(" -", failure);
