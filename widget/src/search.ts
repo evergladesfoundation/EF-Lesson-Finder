@@ -68,6 +68,22 @@ const STRONG_WORD_LENGTH = 7;
 const TITLE_WORD_LENGTH = 5;
 const MIN_KEYWORD_MATCHES = 2;
 
+function normalizeTopicTag(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function lessonsForTopicTag(query: string): Lesson[] {
+  const needle = normalizeTopicTag(query);
+  if (!needle) return [];
+  return LESSONS.filter((lesson) =>
+    lesson.topics.some((tag) => normalizeTopicTag(tag) === needle),
+  );
+}
+
 function inGradeBand(lesson: Lesson, grade: number): boolean {
   return grade >= lesson.gradeMin && grade <= lesson.gradeMax;
 }
@@ -177,6 +193,18 @@ export function searchLessons(query: string): ChatReply {
   const apUnit = extractApUnit(trimmed);
   const words = queryWords(trimmed);
   const gradeOnly = isGradeOnlyQuery(words, grade);
+
+  // A topic tag is returned even when it is short, a stopword, or a grade fragment
+  // such as "tides", "tide", or "k-o-e". Grade-only questions keep the grade list.
+  if (!gradeOnly && !standard && apUnit === null) {
+    const tagged = lessonsForTopicTag(trimmed);
+    if (tagged.length > 0) {
+      return {
+        text: describeMatches(tagged, { grade: null, standard: null, apUnit: null }),
+        lessons: tagged,
+      };
+    }
+  }
 
   const pool =
     grade !== null ? LESSONS.filter((lesson) => inGradeBand(lesson, grade)) : LESSONS;

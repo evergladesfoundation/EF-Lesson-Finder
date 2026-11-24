@@ -38,11 +38,13 @@ GRADE_RANGE_RE = re.compile(
 
 # Line-leading published codes with descriptions, e.g. "SC.6.E.7.6 - Differentiate..."
 # NGSS codes use a two- or three-letter domain (HS-LS2-7, MS-ESS3-5).
+# Climate plans sometimes separate the code with ":", ".", or an en dash.
+# A period or colon counts only when whitespace follows, so "SC.K.L.14.3," stays one code.
 STANDARD_LINE_RE = re.compile(
     r"^\s*("
     r"[A-Z]{2,5}(?:\.[A-Za-z0-9]+)+(?:\.[a-z])?"
     r"|[A-Z]{2}-[A-Z]{2,3}\d+-\d+"
-    r")\s*[-–—]",
+    r")(?:\s*[-–—]|\s*[:.](?=\s))",
     re.M,
 )
 
